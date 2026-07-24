@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import roles from '../data/roles.json'
 import { getSkillGapAnalysis } from '../lib/skillGap'
 
@@ -12,7 +12,14 @@ function Entries({ entries, onRemove }) {
 export default function ProfilePage() {
   const [skill, setSkill] = useState('')
   const [level, setLevel] = useState('Intermediate')
-  const [skills, setSkills] = useState([])
+  const [skills, setSkills] = useState(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      return JSON.parse(window.localStorage.getItem('userSkills') || '[]').map((name) => ({ name, level: 'Intermediate' }))
+    } catch {
+      return []
+    }
+  })
   const [education, setEducation] = useState([])
   const [experience, setExperience] = useState([])
   const [educationForm, setEducationForm] = useState({ degree: '', school: '' })
@@ -39,6 +46,11 @@ export default function ProfilePage() {
   const addKeyHandlers = (callback, targetRef, direction) => (event) => { onEnter(callback)(event); onArrow(targetRef, direction)(event) }
   const selectedRole = roles.roles.find((role) => role.id === selectedRoleId) || roles.roles[0]
   const skillGap = getSkillGapAnalysis(skills.map((item) => item.name), selectedRole.skills)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('userSkills', JSON.stringify(skills.map((item) => item.name)))
+  }, [skills])
 
   return <main className="min-h-screen bg-[#f7f8fa] text-ink">
     <header className="border-b border-slate-200 bg-white"><nav className="wrap flex h-20 items-center justify-between"><a href="/" className="flex items-center gap-2.5 font-extrabold"><span className="grid h-8 w-8 place-items-center rounded-lg bg-mint text-ink">*</span>SkillBridge <span className="-ml-2 text-[#16815a]">AI</span></a><a href="/" className="text-sm font-bold text-slate-500 hover:text-ink">Back to home</a></nav></header>
