@@ -9,20 +9,36 @@ npm install
 npm run dev           # start the frontend
 npm run start-server  # start the backend proxy
 npm run build
+npm test
 ```
 
 ## Backend proxy
 
-The backend proxy is implemented in `server.js` and forwards requests to the AI provider using `AI_API_KEY` from environment variables.
+The backend proxy is implemented in `server.js` and forwards requests to the AI provider using `AI_API_KEY` from environment variables. It does not use a database — the proxy only relays requests safely from the frontend to the AI API.
 
-Example environment variables:
+Before running the backend, set at least:
 
 ```bash
 AI_API_KEY=your_api_key_here
+```
+
+Optional environment variables:
+
+```bash
 AI_API_BASE_URL=https://api.openai.com/v1/
 FRONTEND_ORIGIN=http://localhost:5173
 PORT=4000
 ```
+
+If you want both frontend and backend running locally at the same time, keep `npm run dev` running in one terminal and `npm run start-server` in another.
+
+The proxy endpoint is available at:
+
+```text
+http://localhost:4000/api/ai/proxy
+```
+
+Use relative AI paths like `/chat/completions` or `/images/generations` in the proxy request body.
 
 ## Source structure
 
