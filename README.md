@@ -6,8 +6,22 @@ Frontend foundation built with React, Vite, and Tailwind CSS.
 
 ```bash
 npm install
-npm run dev
+npm run dev           # start the frontend
+npm run start-server  # start the backend proxy
 npm run build
+```
+
+## Backend proxy
+
+The backend proxy is implemented in `server.js` and forwards requests to the AI provider using `AI_API_KEY` from environment variables.
+
+Example environment variables:
+
+```bash
+AI_API_KEY=your_api_key_here
+AI_API_BASE_URL=https://api.openai.com/v1/
+FRONTEND_ORIGIN=http://localhost:5173
+PORT=4000
 ```
 
 ## Source structure
