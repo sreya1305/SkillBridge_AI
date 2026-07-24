@@ -3,6 +3,7 @@
     {
       "id": "data-scientist",
       "title": "Data Scientist",
+      "description": "Analyze data, build models, and translate insights into business decisions.",
       "skills": {
         "critical": [
           "Python",
@@ -30,6 +31,7 @@
     {
       "id": "software-developer",
       "title": "Software Developer",
+      "description": "Build software solutions, write quality code, and collaborate across product teams.",
       "skills": {
         "critical": [
           "Programming fundamentals",
@@ -57,6 +59,7 @@
     {
       "id": "ui-ux-designer",
       "title": "UI/UX Designer",
+      "description": "Design user experiences with research, wireframes, and polished visual systems.",
       "skills": {
         "critical": [
           "User research",
@@ -84,6 +87,7 @@
     {
       "id": "cybersecurity-analyst",
       "title": "Cybersecurity Analyst",
+      "description": "Protect systems with monitoring, incident response, and threat analysis.",
       "skills": {
         "critical": [
           "Network security fundamentals",
