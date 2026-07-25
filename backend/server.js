@@ -1,13 +1,45 @@
 import express from 'express';
 import cors from 'cors';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const AI_API_KEY = process.env.AI_API_KEY;
-const AI_API_BASE_URL = process.env.AI_API_BASE_URL || 'https://api.openai.com/v1/';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function loadEnvFile(filePath = '.env') {
+  if (!existsSync(filePath)) return;
+
+  const lines = readFileSync(filePath, 'utf8').split(/\r?\n/);
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+
+    const separatorIndex = trimmed.indexOf('=');
+    if (separatorIndex === -1) return;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    let value = trimmed.slice(separatorIndex + 1).trim();
+
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  });
+}
+
+loadEnvFile(resolve(__dirname, '.env'));
+
+const AI_API_KEY = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
+const AI_API_BASE_URL = process.env.GEMINI_API_BASE_URL || process.env.AI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/';
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
 const PORT = process.env.PORT || 4000;
 
 if (!AI_API_KEY) {
-  console.error('Missing AI_API_KEY environment variable.');
+  console.error('Missing GEMINI_API_KEY environment variable.');
   process.exit(1);
 }
 
@@ -37,7 +69,7 @@ app.post('/api/ai/proxy', async (req, res) => {
       method,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${AI_API_KEY}`,
+        'x-goog-api-key': AI_API_KEY,
       },
       body: body ? JSON.stringify(body) : undefined,
     });

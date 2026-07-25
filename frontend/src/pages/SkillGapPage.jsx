@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import Navbar from '../components/Navbar'
-import roles from '../data/roles.json'
 import { getSkillGapAnalysis } from '../lib/skillGap'
+import { getSelectedRole } from '../lib/roleStorage'
 
 const categoryLabels = {
   critical: { title: 'Critical', tone: 'bg-red-100 text-red-700' },
@@ -12,8 +12,8 @@ const categoryLabels = {
 export default function SkillGapPage() {
   const targetRoleId = typeof window !== 'undefined' ? window.localStorage.getItem('targetRoleId') : null
   const userSkills = typeof window !== 'undefined' ? JSON.parse(window.localStorage.getItem('userSkills') || '[]') : []
-  const selectedRole = useMemo(() => roles.roles.find((role) => role.id === targetRoleId) || roles.roles[0], [targetRoleId])
-  const skillGap = useMemo(() => getSkillGapAnalysis(userSkills, selectedRole.skills), [userSkills, selectedRole])
+  const selectedRole = useMemo(() => getSelectedRole(), [targetRoleId])
+  const skillGap = useMemo(() => getSkillGapAnalysis(userSkills, selectedRole?.skills), [userSkills, selectedRole])
 
   return <main className="min-h-screen bg-[#f7f8fa] text-ink">
     <Navbar />
@@ -28,8 +28,8 @@ export default function SkillGapPage() {
             </div>
             <div className="rounded-3xl bg-slate-50 p-6 text-sm text-slate-700">
               <p className="font-semibold text-slate-900">Selected role</p>
-              <p className="mt-2 text-lg font-bold text-ink">{selectedRole.title}</p>
-              <p className="mt-2 text-sm text-slate-500">{selectedRole.description}</p>
+              <p className="mt-2 text-lg font-bold text-ink">{selectedRole?.title || 'No role selected'}</p>
+              <p className="mt-2 text-sm text-slate-500">{selectedRole?.description || 'Choose or add a target role to see your gap.'}</p>
               <p className="mt-4 text-xs uppercase tracking-[.2em] text-slate-500">role id</p>
               <p className="mt-1 text-sm text-slate-700">{targetRoleId || 'none selected'}</p>
             </div>

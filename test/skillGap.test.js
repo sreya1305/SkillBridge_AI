@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { getSkillGapAnalysis } from '../src/lib/skillGap.js'
+import { getSkillGapAnalysis } from '../frontend/src/lib/skillGap.js'
 
 function runTest(name, fn) {
   try {

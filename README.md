@@ -14,18 +14,18 @@ npm test
 
 ## Backend proxy
 
-The backend proxy is implemented in `server.js` and forwards requests to the AI provider using `AI_API_KEY` from environment variables. It does not use a database — the proxy only relays requests safely from the frontend to the AI API.
+The backend proxy is implemented in `server.js` and forwards requests to the Gemini API using `GEMINI_API_KEY` from environment variables. It also loads local values from `.env`. It does not use a database — the proxy only relays requests safely from the frontend to the AI API.
 
-Before running the backend, set at least:
+Before running the backend, paste your key into `.env`:
 
-```bash
-AI_API_KEY=your_api_key_here
+```text
+GEMINI_API_KEY=your_google_ai_studio_api_key_here
 ```
 
 Optional environment variables:
 
 ```bash
-AI_API_BASE_URL=https://api.openai.com/v1/
+GEMINI_API_BASE_URL=https://generativelanguage.googleapis.com/v1beta/
 FRONTEND_ORIGIN=http://localhost:5173
 PORT=4000
 ```
@@ -38,7 +38,7 @@ The proxy endpoint is available at:
 http://localhost:4000/api/ai/proxy
 ```
 
-Use relative AI paths like `/chat/completions` or `/images/generations` in the proxy request body.
+Use relative Gemini paths like `models/gemini-2.0-flash:generateContent` in the proxy request body.
 
 ## Source structure
 
