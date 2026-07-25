@@ -84,6 +84,9 @@ export default function SkillGapPage() {
             })}
           </div>
         </div>
+        <div className="mt-6">
+          <a href="/roadmap" className="rounded-full bg-violet px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-violet/90">Generate roadmap</a>
+        </div>
       </div>
     </section>
   </main>

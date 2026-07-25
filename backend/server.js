@@ -210,7 +210,127 @@ app.post('/api/ai/resume-parser', async (req, res) => {
     console.error('Resume parser request failed:', error)
     return res.status(502).json({ error: 'Resume parser request failed', details: error.message })
   }
-});
+})
+
+app.post('/api/ai/roadmap', async (req, res) => {
+  const targetRole = String(req.body?.targetRole || '').trim()
+  const currentSkills = Array.isArray(req.body?.currentSkills) ? req.body.currentSkills.filter((item) => typeof item === 'string').slice(0, 100) : []
+  const missingSkillsRaw = req.body?.missingSkills || {}
+  const matchedSkills = Array.isArray(req.body?.matchedSkills) ? req.body.matchedSkills.filter((item) => typeof item === 'string').slice(0, 100) : []
+
+  const missingSkills = {}
+  if (missingSkillsRaw && typeof missingSkillsRaw === 'object') {
+    ;['critical', 'important', 'niceToHave'].forEach((category) => {
+      const value = missingSkillsRaw[category]
+      if (Array.isArray(value)) {
+        missingSkills[category] = value.filter((item) => typeof item === 'string').slice(0, 20)
+      }
+    })
+  }
+
+  if (!targetRole) {
+    return res.status(400).json({ error: 'targetRole is required.' })
+  }
+
+  const prompt = [
+    'You are a career roadmap planner. Create a structured learning roadmap to transition into the target role.',
+    'Use the provided current skills and skill gaps to tailor the plan.',
+    'Return only valid JSON. Do not add explanations or markdown fences.',
+    'Schema: { milestones: [{ title, focus, skills: string[], resources: string[], estimatedWeeks: number, projects: string[] }], estimatedTotalWeeks: number, summary: string }',
+    'Do not invent specific course titles or providers. Keep resources generic like "official documentation", "beginner project", "community examples".',
+  ].join(' ')
+
+  const contents = [
+    {
+      role: 'user',
+      parts: [
+        { text: prompt },
+        { text: 'Target role: ' + targetRole },
+        { text: 'Current skills: ' + JSON.stringify(currentSkills) },
+        { text: 'Matched skills: ' + JSON.stringify(matchedSkills) },
+        { text: 'Missing skills: ' + JSON.stringify(missingSkills) },
+      ],
+    },
+  ]
+
+  try {
+    const response = await fetch(
+      new URL('models/gemini-2.0-flash:generateContent', AI_API_BASE_URL).toString(),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': AI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents,
+          generationConfig: { responseMimeType: 'application/json' },
+        }),
+      }
+    )
+
+    const responseBody = await response.text()
+    const contentType = response.headers.get('content-type') || ''
+
+    if (!response.ok) {
+      let details = responseBody
+      if (contentType.includes('application/json')) {
+        try {
+          const parsed = JSON.parse(responseBody)
+          details = parsed.error || parsed.details || responseBody
+        } catch {
+          // keep raw body
+        }
+      }
+      return res.status(response.status).json({ error: 'AI request failed', details })
+    }
+
+    let aiResponse
+    if (contentType.includes('application/json')) {
+      aiResponse = JSON.parse(responseBody)
+    } else {
+      return res.status(502).json({ error: 'AI returned non-JSON response', details: responseBody })
+    }
+
+    const content = aiResponse.candidates?.[0]?.content?.parts?.find((part) => typeof part?.text === 'string')?.text
+
+    if (!content) {
+      return res.status(502).json({ error: 'AI response did not include roadmap content.' })
+    }
+
+    let parsed
+    try {
+      parsed = JSON.parse(content)
+    } catch {
+      return res.status(502).json({ error: 'AI response was not valid JSON.', details: content })
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return res.status(502).json({ error: 'AI response must be a JSON object.' })
+    }
+
+    const milestones = Array.isArray(parsed.milestones) ? parsed.milestones.filter((item) => item && typeof item === 'object').slice(0, 12) : []
+    const sanitizedMilestones = milestones.map((milestone) => ({
+      title: typeof milestone.title === 'string' ? milestone.title.trim() : 'Untitled milestone',
+      focus: typeof milestone.focus === 'string' ? milestone.focus.trim() : '',
+      skills: Array.isArray(milestone.skills) ? milestone.skills.filter((item) => typeof item === 'string').slice(0, 20) : [],
+      resources: Array.isArray(milestone.resources) ? milestone.resources.filter((item) => typeof item === 'string').slice(0, 10) : [],
+      estimatedWeeks: typeof milestone.estimatedWeeks === 'number' ? Math.max(1, Math.round(milestone.estimatedWeeks)) : 1,
+      projects: Array.isArray(milestone.projects) ? milestone.projects.filter((item) => typeof item === 'string').slice(0, 5) : [],
+    }))
+
+    const sanitized = {
+      milestones: sanitizedMilestones,
+      estimatedTotalWeeks: typeof parsed.estimatedTotalWeeks === 'number' ? Math.max(1, Math.round(parsed.estimatedTotalWeeks)) : sanitizedMilestones.reduce((sum, m) => sum + m.estimatedWeeks, 0),
+      summary: typeof parsed.summary === 'string' ? parsed.summary.trim() : 'Roadmap generated from your current skills and target role.',
+    }
+
+    return res.status(200).json(sanitized)
+  } catch (error) {
+    console.error('Roadmap generation failed:', error)
+    return res.status(502).json({ error: 'Roadmap generation failed', details: error.message })
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`AI proxy server listening on http://localhost:${PORT}`);
