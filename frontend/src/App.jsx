@@ -15,7 +15,64 @@ const features = [
 ]
 const steps = [['01', 'Share your skills', 'Add your skills manually or upload a resume to make a starting profile.'], ['02', 'Choose a destination', 'Select the role you want to grow into, from data analyst to product designer.'], ['03', 'See your path forward', 'Understand your gaps and follow learning milestones built for you.']]
 
-function HeroFlow() { const flow = [['01', 'Current skills', 'React / SQL / Figma'], ['02', 'Skill gap', '3 priority skills found'], ['03', 'Roadmap', '12-week focused plan'], ['04', 'Career readiness', 'You are on your way']]; return <div className="relative mx-auto mt-14 max-w-5xl"><div className="absolute left-[12%] right-[12%] top-10 hidden h-px bg-violet/60 md:block" /><div className="relative grid gap-3 md:grid-cols-4">{flow.map(([number, title, detail], index) => <div key={title} className={`rounded-2xl border p-5 text-left ${index === 1 ? 'border-violet bg-violet/15 shadow-glow' : 'border-white/10 bg-white/[.045]'}`}><div className={`grid h-10 w-10 place-items-center rounded-xl font-[DM_Mono] text-xs ${index === 1 ? 'bg-violet' : 'bg-white/10 text-mint'}`}>{number}</div><h3 className="mt-5 text-sm font-bold">{title}</h3><p className="mt-1.5 text-xs leading-5 text-slate-400">{detail}</p></div>)}</div></div> }
+function HeroFlow() {
+  const flow = [
+    ['01', 'Current skills', 'React / SQL / Figma'],
+    ['02', 'Skill gap', '3 priority skills found'],
+    ['03', 'Roadmap', '12-week focused plan'],
+    ['04', 'Career readiness', 'You are on your way'],
+  ]
+
+  const stepStyles = [
+    {
+      // 01: Crisp White / Slate Fade
+      card: 'border-white/40 bg-gradient-to-br from-white/15 via-[#121f3d]/90 to-[#0c162d] shadow-sm hover:border-white/80 hover:shadow-white/10',
+      badge: 'bg-white/20 text-white border border-white/40 font-bold',
+      accent: 'text-slate-200',
+    },
+    {
+      // 02: Vibrant Mint Green Fade
+      card: 'border-mint/60 bg-gradient-to-br from-mint/25 via-[#0d2736]/90 to-[#0c162d] shadow-md shadow-mint/15 hover:border-mint hover:shadow-mint/30',
+      badge: 'bg-mint text-ink border border-mint/80 font-bold',
+      accent: 'text-mint',
+    },
+    {
+      // 03: Silver / Ice White Fade
+      card: 'border-slate-300/30 bg-gradient-to-br from-slate-200/10 via-[#101e3d]/90 to-[#0c162d] shadow-sm hover:border-slate-200/60 hover:shadow-white/10',
+      badge: 'bg-white/15 text-slate-100 border border-white/30 font-bold',
+      accent: 'text-slate-300',
+    },
+    {
+      // 04: Emerald Green Fade
+      card: 'border-emerald-400/50 bg-gradient-to-br from-emerald-500/20 via-[#0a2736]/90 to-[#0c162d] shadow-sm hover:border-emerald-400 hover:shadow-emerald-500/20',
+      badge: 'bg-emerald-400/30 text-emerald-200 border border-emerald-400/50 font-bold',
+      accent: 'text-emerald-300',
+    },
+  ]
+
+  return (
+    <div className="relative mx-auto mt-14 max-w-5xl">
+      <div className="absolute left-[12%] right-[12%] top-10 hidden h-[2px] bg-gradient-to-r from-white/70 via-mint to-emerald-400 md:block opacity-80" />
+      <div className="relative grid gap-4 md:grid-cols-4">
+        {flow.map(([number, title, detail], index) => {
+          const style = stepStyles[index]
+          return (
+            <div
+              key={title}
+              className={`rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 ${style.card}`}
+            >
+              <div className={`grid h-10 w-10 place-items-center rounded-xl font-[DM_Mono] text-xs shadow-xs ${style.badge}`}>
+                {number}
+              </div>
+              <h3 className="mt-5 text-sm font-bold text-white">{title}</h3>
+              <p className={`mt-1.5 text-xs leading-5 ${style.accent}`}>{detail}</p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
   const path = window.location.pathname
