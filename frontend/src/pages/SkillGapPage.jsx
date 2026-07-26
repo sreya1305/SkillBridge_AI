@@ -33,13 +33,27 @@ export default function SkillGapPage() {
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
               <p className="font-semibold text-white">Selected role</p>
-              <p className="mt-2 text-lg font-bold text-mint">{selectedRole?.title || 'No role selected'}</p>
-              <p className="mt-2 text-sm text-slate-400">{selectedRole?.description || 'Choose or add a target role to see your gap.'}</p>
+              <p className="mt-2 text-lg font-bold text-mint">{selectedRole?.title || 'Select a role'}</p>
+              <p className="mt-2 text-sm text-slate-400">{selectedRole?.description || 'Choose or add a target role to see your gap analysis.'}</p>
               <p className="mt-4 text-xs uppercase tracking-[.2em] text-slate-500">role id</p>
               <p className="mt-1 text-sm text-slate-300">{targetRoleId || 'none selected'}</p>
             </div>
           </div>
         </div>
+
+        {!selectedRole && (
+          <div className="rounded-3xl border border-dashed border-amber-500/40 bg-amber-950/20 p-6 text-amber-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <p className="font-bold text-white text-base">No Target Role Selected</p>
+                <p className="mt-1 text-sm text-slate-300">Please select a target role to compare against your current profile skills.</p>
+              </div>
+              <a href="/target-role" className="inline-block shrink-0 rounded-full bg-mint px-5 py-2.5 text-sm font-bold text-ink hover:bg-mint/90 transition-all">
+                Select a Role →
+              </a>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-6 rounded-3xl border border-white/10 bg-[#0e1a34] p-6 shadow-xl">

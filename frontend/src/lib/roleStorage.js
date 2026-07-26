@@ -46,14 +46,19 @@ export function getAllRoles() {
   return [...roles.roles, ...getCustomRoles()]
 }
 
-export function getSelectedRole(fallbackRole = roles.roles[0]) {
+export function getSelectedRole(fallbackRole = null) {
   const targetRoleId = canUseStorage() ? window.localStorage.getItem(TARGET_ROLE_ID_KEY) : ''
+  if (!targetRoleId) return fallbackRole
   return getAllRoles().find((role) => role.id === targetRoleId) || fallbackRole
 }
 
 export function selectTargetRole(roleId) {
   if (!canUseStorage()) return
-  window.localStorage.setItem(TARGET_ROLE_ID_KEY, roleId)
+  if (!roleId) {
+    window.localStorage.removeItem(TARGET_ROLE_ID_KEY)
+  } else {
+    window.localStorage.setItem(TARGET_ROLE_ID_KEY, roleId)
+  }
 }
 
 export function saveCustomRole(role) {

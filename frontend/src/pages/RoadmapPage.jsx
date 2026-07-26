@@ -334,7 +334,7 @@ export default function RoadmapPage() {
   }
 
   const metrics = getTrackableItems()
-  const roleTitle = roadmap?.role || selectedRole?.title || 'Target Role'
+  const roleTitle = roadmap?.role || selectedRole?.title || 'Select a role'
   const summaryText = roadmap?.personalizedSummary || roadmap?.summary || 'Tailored learning roadmap created for your target role.'
   const totalDuration = roadmap?.totalEstimatedDuration || (roadmap?.estimatedTotalWeeks ? `${roadmap.estimatedTotalWeeks} weeks` : '12 weeks')
 
@@ -361,7 +361,7 @@ export default function RoadmapPage() {
                   Step-by-step actionable guide customized for your transition into <span className="font-bold text-mint">{roleTitle}</span>. Track your real-time progress across skills, learning steps, and capstone projects.
                 </p>
                 <p className="mt-2 text-sm text-slate-400">
-                  Target Role: <span className="font-semibold text-white">{selectedRole?.title || 'None selected'}</span>
+                  Target Role: <span className="font-semibold text-white">{selectedRole?.title || 'Select a role'}</span>
                 </p>
               </div>
               <div className="shrink-0">
