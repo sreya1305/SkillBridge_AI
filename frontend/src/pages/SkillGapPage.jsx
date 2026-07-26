@@ -5,9 +5,9 @@ import { getSkillGapAnalysis } from '../lib/skillGap'
 import { getSelectedRole } from '../lib/roleStorage'
 
 const categoryLabels = {
-  critical: { title: 'Critical', tone: 'bg-red-100 text-red-700' },
-  important: { title: 'Important', tone: 'bg-amber-100 text-amber-700' },
-  niceToHave: { title: 'Nice to have', tone: 'bg-slate-100 text-slate-700' },
+  critical: { title: 'Critical', tone: 'bg-violet-500/20 text-violet-300 border border-violet-500/40' },
+  important: { title: 'Important', tone: 'bg-sky-500/20 text-sky-300 border border-sky-500/40' },
+  niceToHave: { title: 'Nice to have', tone: 'bg-slate-500/20 text-slate-300 border border-slate-500/40' },
 }
 
 export default function SkillGapPage() {
@@ -42,7 +42,7 @@ export default function SkillGapPage() {
         </div>
 
         {!selectedRole && (
-          <div className="rounded-3xl border border-dashed border-amber-500/40 bg-amber-950/20 p-6 text-amber-200">
+          <div className="rounded-3xl border border-dashed border-sky-500/40 bg-sky-950/20 p-6 text-sky-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="font-bold text-white text-base">No Target Role Selected</p>
@@ -65,7 +65,7 @@ export default function SkillGapPage() {
             <div className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
               <div><span className="font-semibold text-white">Matched skills</span><p className="mt-2 text-xs text-slate-400">Skills already present in your profile.</p></div>
               <div className="grid gap-2">
-                {skillGap.matchedSkills.length > 0 ? skillGap.matchedSkills.map((skill) => <span key={skill} className="rounded-full bg-white/10 border border-white/10 px-3 py-2 text-sm font-medium text-white">{skill}</span>) : <p className="text-slate-400">No matched skills yet.</p>}
+                {skillGap.matchedSkills.length > 0 ? skillGap.matchedSkills.map((skill) => <span key={skill} className="rounded-full bg-mint/10 border border-mint/30 px-3 py-2 text-sm font-medium text-mint">{skill}</span>) : <p className="text-slate-400">No matched skills yet.</p>}
               </div>
             </div>
           </aside>
@@ -87,15 +87,19 @@ export default function SkillGapPage() {
                 </div>
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-sm font-semibold text-red-300">Missing</p>
+                    <p className="text-sm font-bold text-violet-300 flex items-center gap-1.5">
+                      <span>⚡</span> Missing Skills to Learn
+                    </p>
                     <div className="mt-3 space-y-2 text-sm text-slate-200">
-                      {missing.length > 0 ? missing.map((skill) => <div key={skill} className="rounded-2xl border border-red-500/30 bg-red-950/20 px-3 py-2 shadow-sm text-red-200">{skill}</div>) : <div className="rounded-2xl bg-white/5 px-3 py-2 text-slate-400">None</div>}
+                      {missing.length > 0 ? missing.map((skill) => <div key={skill} className="rounded-2xl border border-violet-500/30 bg-violet-950/20 px-3.5 py-2.5 shadow-sm text-violet-200 font-medium hover:border-violet-500/50 transition-all">{skill}</div>) : <div className="rounded-2xl bg-white/5 px-3 py-2 text-slate-400">None</div>}
                     </div>
                   </div>
                   <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-sm font-semibold text-emerald-300">Matched</p>
+                    <p className="text-sm font-bold text-mint flex items-center gap-1.5">
+                      <span>✓</span> Matched Skills
+                    </p>
                     <div className="mt-3 space-y-2 text-sm text-slate-200">
-                      {skillGap.matched[category]?.length > 0 ? skillGap.matched[category].map((skill) => <div key={skill} className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 px-3 py-2 shadow-sm text-emerald-200">{skill}</div>) : <div className="rounded-2xl bg-white/5 px-3 py-2 text-slate-400">None</div>}
+                      {skillGap.matched[category]?.length > 0 ? skillGap.matched[category].map((skill) => <div key={skill} className="rounded-2xl border border-mint/30 bg-mint/10 px-3.5 py-2.5 shadow-sm text-mint font-medium hover:border-mint/50 transition-all">{skill}</div>) : <div className="rounded-2xl bg-white/5 px-3 py-2 text-slate-400">None</div>}
                     </div>
                   </div>
                 </div>
