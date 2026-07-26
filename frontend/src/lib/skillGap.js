@@ -1,90 +1,112 @@
-const SYNONYM_DEFINITIONS = {
-  javascript: ['js', 'javascript', 'javascript/es6', 'nodejs', 'node.js'],
-  react: ['react', 'reactjs', 'react.js'],
-  'machine learning': ['machine learning', 'ml'],
-  postgresql: ['postgresql', 'postgres', 'postgres db', 'postgres dbs'],
-  sql: ['sql'],
+const SKILL_SYNONYMS = {
+  javascript: ['js', 'es6', 'ecmascript'],
+  js: ['javascript', 'es6', 'ecmascript'],
+  typescript: ['ts'],
+  ts: ['typescript'],
+  python: ['py', 'py3', 'python3'],
+  py: ['python', 'py3', 'python3'],
+  react: ['reactjs', 'react.js'],
+  reactjs: ['react', 'react.js'],
+  'react.js': ['react', 'reactjs'],
+  node: ['nodejs', 'node.js'],
+  nodejs: ['node', 'node.js'],
+  'node.js': ['node', 'nodejs'],
+  ml: ['machine learning', 'ai'],
+  'machine learning': ['ml', 'ai'],
+  ai: ['machine learning', 'ml'],
+  sql: ['mysql', 'postgresql', 'postgres', 'databases'],
+  postgres: ['postgresql', 'sql', 'databases'],
+  postgresql: ['postgres', 'sql', 'databases'],
+  databases: ['sql', 'postgres', 'postgresql', 'db'],
+  db: ['databases', 'sql'],
+  dsa: ['data structures and algorithms', 'algorithms', 'data structures'],
+  algo: ['data structures and algorithms', 'algorithms'],
+  algorithms: ['data structures and algorithms', 'dsa'],
+  oop: ['object-oriented programming', 'object oriented programming'],
+  api: ['apis and http', 'apis', 'http', 'rest'],
+  apis: ['apis and http', 'api', 'http', 'rest'],
+  git: ['github', 'gitlab', 'version control'],
+  bash: ['shell', 'scripting'],
+  shell: ['bash', 'scripting'],
+  linux: ['ubuntu'],
+  pandas: ['numpy'],
+  numpy: ['pandas'],
+  figma: [],
+  wireframing: ['wireframe', 'wireframes'],
+  prototyping: ['prototype', 'prototypes'],
 }
 
-const SYNONYM_LOOKUP = new Map(
-  Object.entries(SYNONYM_DEFINITIONS).flatMap(([canonical, aliases]) => [
-    [canonical, canonical],
-    ...aliases.map((alias) => [alias, canonical]),
-  ])
-)
-
-function normalizeText(text) {
-  return String(text || '')
+function cleanStr(str) {
+  return String(str || '')
     .toLowerCase()
-    .replace(/[.,]/g, '')
-    .replace(/\s+/g, ' ')
     .trim()
+    .replace(/visualis/g, 'visualiz')
+    .replace(/organis/g, 'organiz')
+    .replace(/[^a-z0-9]/g, '')
 }
 
-function normalizeSkillName(skill) {
-  const normalized = normalizeText(skill)
-  if (!normalized) return ''
-  return SYNONYM_LOOKUP.get(normalized) || normalized
+function extractSkillName(item) {
+  if (!item) return ''
+  if (typeof item === 'string') return item
+  if (typeof item === 'object') return item.name || item.title || item.skill || ''
+  return String(item)
 }
 
-function splitAlternatives(value) {
-  return normalizeText(value)
-    .split(/\s+or\s+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
+function toWords(str) {
+  return String(str || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && w !== 'and' && w !== 'or' && w !== 'with')
 }
 
-function splitAndParts(value) {
-  return normalizeText(value)
-    .split(/\s+and\s+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
-function buildUserSkillSet(skills = []) {
-  const entries = new Set()
-
-  skills.forEach((skill) => {
-    const normalized = normalizeSkillName(skill)
-    if (!normalized) return
-
-    entries.add(normalized)
-    splitAlternatives(skill).forEach((option) => {
-      const canonical = normalizeSkillName(option)
-      if (canonical) entries.add(canonical)
+function getEquivalentTokens(word) {
+  const norm = cleanStr(word)
+  const results = new Set([norm])
+  const syns = SKILL_SYNONYMS[norm]
+  if (syns) {
+    syns.forEach((s) => {
+      toWords(s).forEach((w) => results.add(cleanStr(w)))
     })
-    splitAndParts(skill).forEach((option) => {
-      const canonical = normalizeSkillName(option)
-      if (canonical) entries.add(canonical)
-    })
+  }
+  return Array.from(results)
+}
+
+function isSingleSkillMatched(requiredSkill, userSkillInput) {
+  const reqClean = cleanStr(requiredSkill)
+  const userClean = cleanStr(userSkillInput)
+
+  if (!reqClean || !userClean) return false
+
+  // 1. Direct clean match
+  if (reqClean === userClean) return true
+
+  // 2. Word token & synonym match (e.g. required "HTML and CSS", user "CSS" or "HTML")
+  const reqWords = toWords(requiredSkill)
+  const userWords = toWords(userSkillInput)
+
+  for (const uw of userWords) {
+    const userTokens = getEquivalentTokens(uw)
+    for (const rw of reqWords) {
+      const reqTokens = getEquivalentTokens(rw)
+      for (const ut of userTokens) {
+        if (reqTokens.includes(ut)) return true
+      }
+    }
+  }
+
+  return false
+}
+
+function isRequirementSatisfied(requiredSkill, userSkills) {
+  return userSkills.some((userItem) => {
+    const userSkillName = extractSkillName(userItem)
+    return isSingleSkillMatched(requiredSkill, userSkillName)
   })
-
-  return entries
-}
-
-function isRequirementSatisfied(requirement, userSkillSet) {
-  const normalized = normalizeSkillName(requirement)
-  if (!normalized) return false
-
-  const alternatives = splitAlternatives(requirement)
-  if (alternatives.length > 1) {
-    return alternatives.some((option) => userSkillSet.has(normalizeSkillName(option)))
-  }
-
-  const andParts = splitAndParts(requirement)
-  if (andParts.length > 1) {
-    return andParts.every((part) => userSkillSet.has(normalizeSkillName(part)))
-  }
-
-  return userSkillSet.has(normalized)
-}
-
-function aggregateMatchedSkills(matched) {
-  return ['critical', 'important', 'niceToHave'].flatMap((category) => matched[category])
 }
 
 export function getSkillGapAnalysis(userSkills = [], roleSkills = {}) {
-  const userSkillSet = buildUserSkillSet(userSkills)
   const categories = ['critical', 'important', 'niceToHave']
 
   const result = {
@@ -102,7 +124,7 @@ export function getSkillGapAnalysis(userSkills = [], roleSkills = {}) {
     result.totalRequiredSkills += requiredSkills.length
 
     requiredSkills.forEach((requiredSkill) => {
-      const satisfied = isRequirementSatisfied(requiredSkill, userSkillSet)
+      const satisfied = isRequirementSatisfied(requiredSkill, userSkills)
       if (satisfied) {
         result.matched[category].push(requiredSkill)
         result.matchedSkills.push(requiredSkill)
