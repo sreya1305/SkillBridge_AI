@@ -101,58 +101,61 @@ export default function TargetRolePage() {
     window.location.href = '/skill-gap'
   }
 
-  return <main className="min-h-screen bg-[#f7f8fa] text-ink">
+  return <main className="relative isolate min-h-screen bg-ink text-white pt-20 pb-16 overflow-hidden">
+    <div className="absolute left-1/2 top-[-26rem] -z-10 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-violet/25 blur-[130px] pointer-events-none" />
+    <div className="absolute right-[-12rem] top-1/3 -z-10 h-[600px] w-[600px] rounded-full bg-mint/15 blur-[160px] pointer-events-none" />
+    <div className="absolute left-[-12rem] bottom-20 -z-10 h-[500px] w-[500px] rounded-full bg-mint/10 blur-[150px] pointer-events-none" />
     <Navbar />
     <section className="wrap py-16">
       <div className="mx-auto max-w-5xl">
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="rounded-3xl border border-white/10 bg-[#0e1a34] p-10 shadow-xl">
           <div className="mb-8">
-            <p className="eyebrow text-violet">Choose a target role</p>
-            <h1 className="mt-4 text-4xl font-extrabold tracking-[-.04em] text-ink sm:text-5xl">What career path do you want next?</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">Search through the role library, review the required skill categories, and lock in one target role before closing your gap.</p>
+            <p className="eyebrow text-mint">Choose a target role</p>
+            <h1 className="mt-4 text-4xl font-extrabold tracking-[-.04em] text-white sm:text-5xl">What career path do you want next?</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">Search through the role library, review the required skill categories, and lock in one target role before closing your gap.</p>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
-              <label className="block text-sm font-semibold text-slate-700">Search roles</label>
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by role, skill, or keyword" className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-violet focus:ring-2 focus:ring-violet/15" />
+              <label className="block text-sm font-semibold text-slate-200">Search roles</label>
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by role, skill, or keyword" className="w-full rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 outline-none transition focus:border-mint focus:ring-2 focus:ring-mint/20" />
             </div>
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
-              <p className="font-semibold text-slate-900">Available roles</p>
-              <p className="mt-3 leading-6">Choose from the role library or add your own target role with the skills you want to compare against.</p>
-              <div className="mt-4 space-y-2 text-sm text-slate-600"><div><span className="font-semibold">Total roles:</span> {allRoles.length}</div><div><span className="font-semibold">Showing:</span> {filteredRoles.length}</div></div>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
+              <p className="font-semibold text-white">Available roles</p>
+              <p className="mt-3 leading-6 text-slate-300">Choose from the role library or add your own target role with the skills you want to compare against.</p>
+              <div className="mt-4 space-y-2 text-sm text-slate-400"><div><span className="font-semibold text-slate-200">Total roles:</span> {allRoles.length}</div><div><span className="font-semibold text-slate-200">Showing:</span> {filteredRoles.length}</div></div>
             </div>
           </div>
 
-          <form onSubmit={handleGenerateRole} className="mt-8 rounded-3xl border border-dashed border-violet/40 bg-[#f9f8ff] p-6">
+          <form onSubmit={handleGenerateRole} className="mt-8 rounded-3xl border border-dashed border-violet-500/40 bg-violet-950/20 p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="font-semibold text-slate-900">Generate another target role</p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">Enter the role you want. SkillBridge AI will fetch the expected skills and prepare the gap categories.</p>
+                <p className="font-semibold text-white">Generate another target role</p>
+                <p className="mt-1 text-sm leading-6 text-slate-300">Enter the role you want. SkillBridge AI will fetch the expected skills and prepare the gap categories.</p>
               </div>
-              <button type="submit" disabled={isGenerating} className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400">{isGenerating ? 'Generating...' : 'Generate skills'}</button>
+              <button type="submit" disabled={isGenerating} className="rounded-full bg-violet px-6 py-3 text-sm font-bold text-white shadow-glow hover:bg-violet/90 transition-all disabled:cursor-not-allowed disabled:bg-slate-700">{isGenerating ? 'Generating...' : 'Generate skills'}</button>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1.4fr]">
-              <input value={customRole.title} onChange={(event) => setCustomRole({ ...customRole, title: event.target.value })} placeholder="Target role title" className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet focus:ring-2 focus:ring-violet/15" />
-              <input value={customRole.description} onChange={(event) => setCustomRole({ ...customRole, description: event.target.value })} placeholder="Short description" className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet focus:ring-2 focus:ring-violet/15" />
+              <input value={customRole.title} onChange={(event) => setCustomRole({ ...customRole, title: event.target.value })} placeholder="Target role title" className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white placeholder-slate-400 outline-none transition focus:border-mint focus:ring-2 focus:ring-mint/20" />
+              <input value={customRole.description} onChange={(event) => setCustomRole({ ...customRole, description: event.target.value })} placeholder="Short description" className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white placeholder-slate-400 outline-none transition focus:border-mint focus:ring-2 focus:ring-mint/20" />
             </div>
-            {generatedRole && <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+            {generatedRole && <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-semibold text-slate-900">Generated skills are ready. Review them, then save this role.</p>
-                <button type="button" onClick={handleSaveGeneratedRole} className="rounded-full bg-violet px-5 py-3 text-sm font-bold text-white">Save and view gap</button>
+                <p className="text-sm font-semibold text-white">Generated skills are ready. Review them, then save this role.</p>
+                <button type="button" onClick={handleSaveGeneratedRole} className="rounded-full bg-mint px-5 py-3 text-sm font-bold text-ink hover:bg-mint/90 transition-all">Save and view gap</button>
               </div>
               <div className="mt-4 grid gap-3 lg:grid-cols-3">
-                <textarea value={customRole.critical} onChange={(event) => setCustomRole({ ...customRole, critical: event.target.value })} placeholder="Critical skills" rows="7" className="resize-none rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-violet focus:ring-2 focus:ring-violet/15" />
-                <textarea value={customRole.important} onChange={(event) => setCustomRole({ ...customRole, important: event.target.value })} placeholder="Important skills" rows="7" className="resize-none rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-violet focus:ring-2 focus:ring-violet/15" />
-                <textarea value={customRole.niceToHave} onChange={(event) => setCustomRole({ ...customRole, niceToHave: event.target.value })} placeholder="Nice-to-have skills" rows="7" className="resize-none rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-violet focus:ring-2 focus:ring-violet/15" />
+                <textarea value={customRole.critical} onChange={(event) => setCustomRole({ ...customRole, critical: event.target.value })} placeholder="Critical skills" rows="7" className="resize-none rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white placeholder-slate-400 outline-none transition focus:border-mint focus:ring-2 focus:ring-mint/20" />
+                <textarea value={customRole.important} onChange={(event) => setCustomRole({ ...customRole, important: event.target.value })} placeholder="Important skills" rows="7" className="resize-none rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white placeholder-slate-400 outline-none transition focus:border-mint focus:ring-2 focus:ring-mint/20" />
+                <textarea value={customRole.niceToHave} onChange={(event) => setCustomRole({ ...customRole, niceToHave: event.target.value })} placeholder="Nice-to-have skills" rows="7" className="resize-none rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white placeholder-slate-400 outline-none transition focus:border-mint focus:ring-2 focus:ring-mint/20" />
               </div>
             </div>}
-            {formError && <p role="alert" className="mt-3 text-sm font-semibold text-red-700">{formError}</p>}
+            {formError && <p role="alert" className="mt-3 text-sm font-semibold text-red-400">{formError}</p>}
           </form>
 
           <div className="mt-10 grid gap-6">
             {filteredRoles.map((role) => <RoleCard key={role.id} role={role} isSelected={selectedRoleId === role.id} onSelect={handleSelect} />)}
-            {filteredRoles.length === 0 && <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500">No matching roles found. Try a different search term.</div>}
+            {filteredRoles.length === 0 && <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-slate-400">No matching roles found. Try a different search term.</div>}
           </div>
         </div>
       </div>

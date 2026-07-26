@@ -338,78 +338,81 @@ export default function RoadmapPage() {
   const totalDuration = roadmap?.totalEstimatedDuration || (roadmap?.estimatedTotalWeeks ? `${roadmap.estimatedTotalWeeks} weeks` : '12 weeks')
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa] text-ink">
+    <main className="relative isolate min-h-screen bg-ink text-white pt-20 pb-16 overflow-hidden">
+      <div className="absolute left-1/2 top-[-26rem] -z-10 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-violet/25 blur-[130px] pointer-events-none" />
+      <div className="absolute right-[-10rem] top-1/4 -z-10 h-[600px] w-[600px] rounded-full bg-mint/15 blur-[160px] pointer-events-none" />
+      <div className="absolute left-[-10rem] bottom-20 -z-10 h-[500px] w-[500px] rounded-full bg-mint/10 blur-[150px] pointer-events-none" />
       <Navbar />
-      <div className="wrap py-6">
-        <a href="/profile" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-ink">
+      <div className="wrap py-4">
+        <a href="/profile" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white transition">
           ← Back to profile
         </a>
       </div>
       <section className="wrap pb-16">
         <div className="mx-auto max-w-5xl space-y-8">
           {/* Header & Generator Card */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-10 shadow-sm">
+          <div className="rounded-3xl border border-white/10 bg-[#0e1a34] p-8 sm:p-10 shadow-xl">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="eyebrow text-violet">Expert AI Career Mentor</p>
-                <h1 className="mt-2 text-3xl font-extrabold tracking-[-.04em] text-ink sm:text-4xl">
+                <p className="eyebrow text-mint">Expert AI Career Mentor</p>
+                <h1 className="mt-2 text-3xl font-extrabold tracking-[-.04em] text-white sm:text-4xl">
                   Personalized Learning Path
                 </h1>
-                <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-                  Step-by-step actionable guide customized for your transition into <span className="font-bold text-ink">{roleTitle}</span>. Track your real-time progress across skills, learning steps, and capstone projects.
+                <p className="mt-3 max-w-2xl text-base leading-7 text-slate-300">
+                  Step-by-step actionable guide customized for your transition into <span className="font-bold text-mint">{roleTitle}</span>. Track your real-time progress across skills, learning steps, and capstone projects.
                 </p>
-                <p className="mt-2 text-sm text-slate-500">
-                  Target Role: <span className="font-semibold text-ink">{selectedRole?.title || 'None selected'}</span>
+                <p className="mt-2 text-sm text-slate-400">
+                  Target Role: <span className="font-semibold text-white">{selectedRole?.title || 'None selected'}</span>
                 </p>
               </div>
               <div className="shrink-0">
                 <button
                   onClick={handleGenerate}
                   disabled={loading || !selectedRole}
-                  className="rounded-full bg-violet px-6 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-violet/90 disabled:opacity-60 transition-all"
+                  className="rounded-full bg-violet px-6 py-3.5 text-sm font-bold text-white shadow-glow hover:bg-violet/90 disabled:opacity-60 transition-all"
                 >
                   {loading ? 'Generating Mentor Plan...' : (roadmap ? 'Regenerate Roadmap' : 'Generate Roadmap')}
                 </button>
-                {!selectedRole && <p className="mt-2 text-xs text-slate-500">Select a target role in your profile first.</p>}
+                {!selectedRole && <p className="mt-2 text-xs text-slate-400">Select a target role in your profile first.</p>}
               </div>
             </div>
           </div>
 
-          {error && <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{error}</div>}
+          {error && <div className="rounded-3xl border border-red-500/30 bg-red-950/40 p-6 text-sm text-red-300">{error}</div>}
 
           {roadmap && (
             <div className="space-y-6">
               {/* Interactive Progress Tracking Header Card */}
-              <section className="rounded-3xl border border-violet-200/80 bg-gradient-to-br from-violet-50/60 via-white to-indigo-50/40 p-6 sm:p-8 text-slate-800 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-violet-100 pb-5">
+              <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#122040] via-[#0d1830] to-[#081225] p-6 sm:p-8 text-white shadow-xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-200">
+                      <span className="rounded-full bg-violet/20 px-3 py-1 text-xs font-bold text-mint border border-mint/20">
                         ⚡ Real-Time Local Progress
                       </span>
                       {metrics.percent === 100 && (
-                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+                        <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-500/30">
                           🏆 100% Completed!
                         </span>
                       )}
                     </div>
-                    <h2 className="text-2xl font-extrabold text-ink mt-2 tracking-tight">Your Career Roadmap Progress</h2>
-                    <p className="text-xs text-slate-600 mt-1">
+                    <h2 className="text-2xl font-extrabold text-white mt-2 tracking-tight">Your Career Roadmap Progress</h2>
+                    <p className="text-xs text-slate-400 mt-1">
                       Check off completed learning steps, skill masterclasses, and capstone projects. Saved automatically on this browser.
                     </p>
                   </div>
 
                   <div className="shrink-0 flex items-center gap-3">
                     <div className="text-right">
-                      <span className={`text-3xl font-black ${metrics.percent === 100 ? 'text-emerald-600' : 'text-violet-600'}`}>
+                      <span className={`text-3xl font-black ${metrics.percent === 100 ? 'text-emerald-400' : 'text-mint'}`}>
                         {metrics.percent}%
                       </span>
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Overall Completion</p>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Overall Completion</p>
                     </div>
                     {metrics.completed > 0 && (
                       <button
                         onClick={handleResetProgress}
-                        className="rounded-xl bg-slate-100 border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 hover:text-ink transition-all"
+                        className="rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 hover:bg-white/20 hover:text-white transition-all"
                         title="Reset checked progress items"
                       >
                         🔄 Reset
@@ -420,18 +423,18 @@ export default function RoadmapPage() {
 
                 {/* Animated Progress Bar */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
                     <span>Progress Tracker</span>
                     <span>{metrics.completed} of {metrics.total} items completed</span>
                   </div>
-                  <div className="h-4 w-full rounded-full bg-slate-200/80 p-0.5 overflow-hidden border border-slate-300/60 shadow-inner">
+                  <div className="h-4 w-full rounded-full bg-white/10 p-0.5 overflow-hidden border border-white/10 shadow-inner">
                     <div
                       className="h-full rounded-full transition-all duration-500 ease-out"
                       style={{
                         width: `${metrics.percent}%`,
                         background: metrics.percent === 100
                           ? 'linear-gradient(90deg, #10b981, #059669)'
-                          : 'linear-gradient(90deg, #6366f1, #8b5cf6, #10b981)'
+                          : 'linear-gradient(90deg, #7267FF, #8b5cf6, #B9F4D1)'
                       }}
                     />
                   </div>
@@ -445,17 +448,17 @@ export default function RoadmapPage() {
                         key={pIdx}
                         className={`rounded-2xl p-3 text-xs border transition-all ${
                           ps.isFinished
-                            ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950 font-semibold'
-                            : 'bg-white/80 border-slate-200 text-slate-700'
+                            ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300 font-semibold'
+                            : 'bg-white/[.04] border-white/10 text-slate-300'
                         }`}
                       >
                         <div className="flex items-center justify-between font-bold">
                           <span className="truncate">Phase {pIdx + 1}</span>
-                          <span className={ps.isFinished ? 'text-emerald-700 font-extrabold' : 'text-slate-600'}>
+                          <span className={ps.isFinished ? 'text-emerald-400 font-extrabold' : 'text-slate-400'}>
                             {ps.isFinished ? '✅ Complete' : `${ps.completed}/${ps.total}`}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 truncate mt-0.5">{ps.title}</p>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">{ps.title}</p>
                       </div>
                     ))}
                   </div>
@@ -463,15 +466,15 @@ export default function RoadmapPage() {
               </section>
 
               {/* Overall Summary Card */}
-              <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+              <section className="rounded-3xl border border-white/10 bg-[#0e1a34] p-6 sm:p-8 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-xl font-bold text-ink">Personalized Strategy</h2>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{summaryText}</p>
+                    <h2 className="text-xl font-bold text-white">Personalized Strategy</h2>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-300">{summaryText}</p>
                   </div>
-                  <div className="shrink-0 rounded-2xl bg-violet/10 border border-violet/20 px-4 py-2.5 text-center">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-violet">Estimated Duration</p>
-                    <p className="text-sm font-extrabold text-violet mt-0.5">{totalDuration}</p>
+                  <div className="shrink-0 rounded-2xl bg-violet/20 border border-violet/30 px-4 py-2.5 text-center">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-mint">Estimated Duration</p>
+                    <p className="text-sm font-extrabold text-white mt-0.5">{totalDuration}</p>
                   </div>
                 </div>
               </section>
@@ -489,18 +492,18 @@ export default function RoadmapPage() {
                     const isProjDone = !!completedItems[projId]
 
                     return (
-                      <div key={mIdx} className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                      <div key={mIdx} className="rounded-3xl border border-white/10 bg-[#0e1a34] p-6 sm:p-8 shadow-xl space-y-6">
                         {/* Milestone Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-5">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-white/10 pb-5">
                           <div className="space-y-1">
-                            <span className="inline-block rounded-full bg-violet/10 px-3 py-1 text-xs font-bold text-violet">
+                            <span className="inline-block rounded-full bg-violet/20 px-3 py-1 text-xs font-bold text-mint border border-mint/20">
                               Phase {mIdx + 1} • {milestone.estimatedDuration || (milestone.estimatedWeeks ? `${milestone.estimatedWeeks} weeks` : '4 weeks')}
                             </span>
-                            <h3 className="text-xl font-bold text-ink pt-1">{milestone.title}</h3>
-                            {milestone.goal && <p className="text-sm font-medium text-slate-700">🎯 Goal: {milestone.goal}</p>}
+                            <h3 className="text-xl font-bold text-white pt-1">{milestone.title}</h3>
+                            {milestone.goal && <p className="text-sm font-medium text-slate-200">🎯 Goal: {milestone.goal}</p>}
                             {milestone.whyItMatters && (
-                              <p className="text-xs text-slate-500 leading-relaxed max-w-3xl">
-                                💡 <span className="font-semibold text-slate-600">Why it matters:</span> {milestone.whyItMatters}
+                              <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">
+                                💡 <span className="font-semibold text-slate-300">Why it matters:</span> {milestone.whyItMatters}
                               </p>
                             )}
                           </div>
@@ -508,7 +511,7 @@ export default function RoadmapPage() {
                           {skills.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 sm:justify-end">
                               {skills.map((s, sIdx) => (
-                                <span key={sIdx} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                                <span key={sIdx} className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300">
                                   {s}
                                 </span>
                               ))}
@@ -519,7 +522,7 @@ export default function RoadmapPage() {
                         {/* Learning Steps / Topics */}
                         {steps.length > 0 && (
                           <div className="space-y-4">
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-violet">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-mint">
                               📚 Detailed Learning Steps & Resources ({steps.length})
                             </h4>
                             <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
@@ -535,8 +538,8 @@ export default function RoadmapPage() {
                                     key={stIdx}
                                     className={`rounded-2xl border p-5 space-y-4 shadow-xs transition-all ${
                                       isDone
-                                        ? 'border-emerald-300 bg-emerald-50/40 opacity-90'
-                                        : 'border-slate-200 bg-slate-50/80 hover:border-slate-300'
+                                        ? 'border-emerald-500/40 bg-emerald-950/30 opacity-90'
+                                        : 'border-white/10 bg-white/[.03] hover:border-violet/40'
                                     }`}
                                   >
                                     {/* Topic Title & Checkbox */}
@@ -547,28 +550,28 @@ export default function RoadmapPage() {
                                             type="checkbox"
                                             checked={isDone}
                                             onChange={() => toggleItem(stepId)}
-                                            className="h-4 w-4 rounded border-slate-300 text-violet focus:ring-violet cursor-pointer"
+                                            className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-violet focus:ring-violet cursor-pointer"
                                           />
-                                          <h5 className={`font-bold text-sm sm:text-base ${isDone ? 'line-through text-slate-500' : 'text-ink'}`}>
+                                          <h5 className={`font-bold text-sm sm:text-base ${isDone ? 'line-through text-slate-400' : 'text-white'}`}>
                                             {step.topic}
                                           </h5>
                                         </div>
                                         {step.estimatedStudyTime && (
-                                          <span className="shrink-0 rounded-full bg-slate-200/70 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
+                                          <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">
                                             ⏳ {step.estimatedStudyTime}
                                           </span>
                                         )}
                                       </div>
                                       {step.whyLearnThis && (
-                                        <p className="mt-1 text-xs text-slate-600 leading-relaxed pl-6.5">{step.whyLearnThis}</p>
+                                        <p className="mt-1 text-xs text-slate-400 leading-relaxed pl-6.5">{step.whyLearnThis}</p>
                                       )}
                                     </div>
 
                                     {/* Subtopics */}
                                     {subtopics.length > 0 && (
-                                      <div className="rounded-xl bg-white p-3 border border-slate-200/60 text-xs">
-                                        <p className="font-semibold text-slate-700 mb-1">Key Subtopics:</p>
-                                        <ul className="list-disc pl-4 space-y-0.5 text-slate-600">
+                                      <div className="rounded-xl bg-white/5 p-3 border border-white/10 text-xs">
+                                        <p className="font-semibold text-slate-300 mb-1">Key Subtopics:</p>
+                                        <ul className="list-disc pl-4 space-y-0.5 text-slate-400">
                                           {subtopics.map((st, subIdx) => (
                                             <li key={subIdx}>{st}</li>
                                           ))}
@@ -578,22 +581,22 @@ export default function RoadmapPage() {
 
                                     {/* Resource */}
                                     {res.title && (
-                                      <div className="rounded-xl bg-violet-50/60 border border-violet-100 p-3 text-xs space-y-1.5">
+                                      <div className="rounded-xl bg-violet-950/40 border border-violet-500/30 p-3 text-xs space-y-1.5">
                                         <div className="flex items-center justify-between">
-                                          <span className="font-bold text-violet-950">📖 Recommended Resource</span>
+                                          <span className="font-bold text-violet-200">📖 Recommended Resource</span>
                                           {res.type && (
-                                            <span className="rounded bg-violet-200/70 px-2 py-0.5 text-[10px] font-bold text-violet-900">
+                                            <span className="rounded bg-violet-500/30 px-2 py-0.5 text-[10px] font-bold text-mint">
                                               {res.type}
                                             </span>
                                           )}
                                         </div>
-                                        <p className="font-semibold text-slate-800">{res.title}</p>
+                                        <p className="font-semibold text-white">{res.title}</p>
                                         {res.url && (
                                           <a
                                             href={res.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 font-bold text-violet hover:underline pt-0.5"
+                                            className="inline-flex items-center gap-1.5 font-bold text-mint hover:underline pt-0.5"
                                           >
                                             <span>Open Resource on {res.platform || 'Web'}</span>
                                             <span>↗</span>
@@ -604,13 +607,13 @@ export default function RoadmapPage() {
 
                                     {/* Practical Task */}
                                     {step.practicalTask && (
-                                      <div className="rounded-xl bg-amber-50/80 border border-amber-200/70 p-3 text-xs text-amber-950 space-y-1">
-                                        <p className="font-bold">⚡ Practical Application Task:</p>
-                                        <p className="text-amber-900 leading-relaxed">{step.practicalTask}</p>
+                                      <div className="rounded-xl bg-amber-950/30 border border-amber-500/30 p-3 text-xs text-amber-200 space-y-1">
+                                        <p className="font-bold text-amber-300">⚡ Practical Application Task:</p>
+                                        <p className="text-amber-200 leading-relaxed">{step.practicalTask}</p>
                                         {criteria.length > 0 && (
                                           <div className="pt-1">
-                                            <p className="font-semibold text-amber-950 text-[11px]">Completion Criteria:</p>
-                                            <ul className="list-disc pl-4 text-[11px] text-amber-900 space-y-0.5">
+                                            <p className="font-semibold text-amber-300 text-[11px]">Completion Criteria:</p>
+                                            <ul className="list-disc pl-4 text-[11px] text-amber-200 space-y-0.5">
                                               {criteria.map((c, cIdx) => (
                                                 <li key={cIdx}>{c}</li>
                                               ))}
@@ -628,12 +631,12 @@ export default function RoadmapPage() {
 
                         {/* Per-Skill Explicit Study Guides */}
                         {resolvedBreakdown?.length > 0 && (
-                          <div className="space-y-4 pt-2 border-t border-slate-100">
+                          <div className="space-y-4 pt-2 border-t border-white/10">
                             <div className="flex items-center justify-between">
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-violet">
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-mint">
                                 📍 Where & How to Study Each Skill ({resolvedBreakdown.length} Skill Guides)
                               </h4>
-                              <span className="text-[11px] font-medium text-slate-500">Step-by-Step & Direct Platform Links</span>
+                              <span className="text-[11px] font-medium text-slate-400">Step-by-Step & Direct Platform Links</span>
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
@@ -646,23 +649,23 @@ export default function RoadmapPage() {
                                     key={sbIdx}
                                     className={`rounded-2xl border p-5 space-y-4 shadow-xs transition-all ${
                                       isSkillDone
-                                        ? 'border-emerald-300 bg-emerald-50/40 opacity-90'
-                                        : 'border-violet/20 bg-gradient-to-b from-violet-50/30 to-white'
+                                        ? 'border-emerald-500/40 bg-emerald-950/30 opacity-90'
+                                        : 'border-violet-500/30 bg-gradient-to-b from-violet-950/30 to-[#0e1a34]'
                                     }`}
                                   >
-                                    <div className="flex items-center justify-between border-b border-violet/10 pb-2.5">
+                                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                                       <div className="flex items-center gap-2.5">
                                         <input
                                           type="checkbox"
                                           checked={isSkillDone}
                                           onChange={() => toggleItem(skillId)}
-                                          className="h-4 w-4 rounded border-slate-300 text-violet focus:ring-violet cursor-pointer"
+                                          className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-violet focus:ring-violet cursor-pointer"
                                         />
-                                        <h5 className={`font-extrabold text-base ${isSkillDone ? 'line-through text-slate-500' : 'text-ink'}`}>
+                                        <h5 className={`font-extrabold text-base ${isSkillDone ? 'line-through text-slate-400' : 'text-white'}`}>
                                           🎯 {sb.skill}
                                         </h5>
                                       </div>
-                                      <span className="rounded-full bg-violet/10 px-2.5 py-0.5 text-[10px] font-bold text-violet">
+                                      <span className="rounded-full bg-violet/20 border border-mint/20 px-2.5 py-0.5 text-[10px] font-bold text-mint">
                                         {isSkillDone ? '✅ Mastered' : 'Skill Masterclass'}
                                       </span>
                                     </div>
@@ -670,8 +673,8 @@ export default function RoadmapPage() {
                                     {/* How to Develop Step-by-Step */}
                                     {sb.howToDevelop?.length > 0 && (
                                       <div className="space-y-1.5 pl-6.5">
-                                        <p className="text-xs font-bold text-slate-800">🚀 How & Where to Study Step-by-Step:</p>
-                                        <ul className="list-disc pl-4 space-y-1 text-xs text-slate-700">
+                                        <p className="text-xs font-bold text-slate-200">🚀 How & Where to Study Step-by-Step:</p>
+                                        <ul className="list-disc pl-4 space-y-1 text-xs text-slate-300">
                                           {sb.howToDevelop.map((step, stIdx) => (
                                             <li key={stIdx} className="leading-relaxed">{step}</li>
                                           ))}
@@ -682,7 +685,7 @@ export default function RoadmapPage() {
                                     {/* Direct Platform Links */}
                                     {sb.platformResources?.length > 0 && (
                                       <div className="space-y-1.5 pt-1 pl-6.5">
-                                        <p className="text-xs font-bold text-slate-800">🔗 Recommended Platforms & Direct Study Links:</p>
+                                        <p className="text-xs font-bold text-slate-200">🔗 Recommended Platforms & Direct Study Links:</p>
                                         <div className="flex flex-wrap gap-2 pt-0.5">
                                           {sb.platformResources.map((res, rIdx) => (
                                             <a
@@ -690,7 +693,7 @@ export default function RoadmapPage() {
                                               href={res.url}
                                               target="_blank"
                                               rel="noopener noreferrer"
-                                              className="inline-flex items-center gap-1.5 rounded-xl border border-violet/30 bg-white px-3 py-1.5 text-xs font-bold text-violet hover:bg-violet-600 hover:text-white transition-all shadow-xs"
+                                              className="inline-flex items-center gap-1.5 rounded-xl border border-mint/30 bg-mint/10 px-3 py-1.5 text-xs font-bold text-mint hover:bg-mint hover:text-ink transition-all shadow-xs"
                                             >
                                               <span>{res.name}</span>
                                               <span className="text-[10px]">↗</span>
@@ -702,9 +705,9 @@ export default function RoadmapPage() {
 
                                     {/* Actionable Task */}
                                     {sb.actionableTask && (
-                                      <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950 space-y-1">
-                                        <p className="font-bold">⚡ Hands-on Skill Task:</p>
-                                        <p className="text-amber-900 leading-relaxed">{sb.actionableTask}</p>
+                                      <div className="rounded-xl bg-amber-950/30 border border-amber-500/30 p-3 text-xs text-amber-200 space-y-1">
+                                        <p className="font-bold text-amber-300">⚡ Hands-on Skill Task:</p>
+                                        <p className="text-amber-200 leading-relaxed">{sb.actionableTask}</p>
                                       </div>
                                     )}
                                   </div>
@@ -719,48 +722,48 @@ export default function RoadmapPage() {
                           <div
                             className={`rounded-2xl border p-5 space-y-3 transition-all ${
                               isProjDone
-                                ? 'border-emerald-400 bg-emerald-100/50'
-                                : 'border-emerald-200 bg-emerald-50/50'
+                                ? 'border-emerald-500/50 bg-emerald-950/40'
+                                : 'border-emerald-500/30 bg-emerald-950/20'
                             }`}
                           >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-100 pb-2.5">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-500/20 pb-2.5">
                               <div className="flex items-center gap-3">
                                 <input
                                   type="checkbox"
                                   checked={isProjDone}
                                   onChange={() => toggleItem(projId)}
-                                  className="h-5 w-5 rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                  className="h-5 w-5 rounded border-emerald-500 bg-slate-800 text-emerald-400 focus:ring-emerald-500 cursor-pointer"
                                 />
                                 <div>
-                                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
                                     🏆 Milestone Capstone Project {isProjDone ? '(Completed ✅)' : ''}
                                   </span>
-                                  <h4 className={`text-base font-bold text-emerald-950 mt-0.5 ${isProjDone ? 'line-through text-emerald-700' : ''}`}>
+                                  <h4 className={`text-base font-bold text-white mt-0.5 ${isProjDone ? 'line-through text-emerald-300' : ''}`}>
                                     {project.title}
                                   </h4>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 pl-8 sm:pl-0">
                                 {project.difficulty && (
-                                  <span className="rounded-full bg-emerald-100 border border-emerald-200 px-3 py-0.5 text-xs font-bold text-emerald-800">
+                                  <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-0.5 text-xs font-bold text-emerald-300">
                                     {project.difficulty}
                                   </span>
                                 )}
                                 {project.estimatedDuration && (
-                                  <span className="rounded-full bg-emerald-100 border border-emerald-200 px-3 py-0.5 text-xs font-bold text-emerald-800">
+                                  <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-0.5 text-xs font-bold text-emerald-300">
                                     ⏱ {project.estimatedDuration}
                                   </span>
                                 )}
                               </div>
                             </div>
 
-                            <p className="text-xs text-emerald-900 leading-relaxed pl-8 sm:pl-0">{project.description}</p>
+                            <p className="text-xs text-slate-300 leading-relaxed pl-8 sm:pl-0">{project.description}</p>
 
                             {project.skillsDemonstrated?.length > 0 && (
                               <div className="flex flex-wrap items-center gap-1.5 text-xs pl-8 sm:pl-0">
-                                <span className="font-semibold text-emerald-950">Skills Demonstrated:</span>
+                                <span className="font-semibold text-slate-200">Skills Demonstrated:</span>
                                 {project.skillsDemonstrated.map((sd, sdIdx) => (
-                                  <span key={sdIdx} className="rounded bg-emerald-100/80 px-2 py-0.5 text-[11px] font-medium text-emerald-900">
+                                  <span key={sdIdx} className="rounded bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
                                     {sd}
                                   </span>
                                 ))}
@@ -768,9 +771,9 @@ export default function RoadmapPage() {
                             )}
 
                             {project.completionCriteria?.length > 0 && (
-                              <div className="text-xs text-emerald-900 pt-1 pl-8 sm:pl-0">
-                                <span className="font-bold text-emerald-950">Project Criteria:</span>
-                                <ul className="list-disc pl-4 text-emerald-900 space-y-0.5 mt-0.5">
+                              <div className="text-xs text-slate-300 pt-1 pl-8 sm:pl-0">
+                                <span className="font-bold text-emerald-300">Project Criteria:</span>
+                                <ul className="list-disc pl-4 text-slate-300 space-y-0.5 mt-0.5">
                                   {project.completionCriteria.map((pc, pcIdx) => (
                                     <li key={pcIdx}>{pc}</li>
                                   ))}
@@ -783,7 +786,7 @@ export default function RoadmapPage() {
                     )
                   })
                 ) : (
-                  <p className="text-sm text-slate-500">No milestones generated.</p>
+                  <p className="text-sm text-slate-400">No milestones generated.</p>
                 )}
               </section>
             </div>
