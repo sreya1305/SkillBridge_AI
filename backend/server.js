@@ -144,6 +144,7 @@ app.post('/api/ai/resume-parser', async (req, res) => {
 
     const responseBody = await response.text()
     const contentType = response.headers.get('content-type') || ''
+    console.log('[roadmap] ai status', response.status, 'contentType', contentType, 'body', responseBody)
 
     if (!response.ok) {
       let details = responseBody
@@ -271,6 +272,7 @@ app.post('/api/ai/roadmap', async (req, res) => {
 
     const responseBody = await response.text()
     const contentType = response.headers.get('content-type') || ''
+    console.log('[roadmap] ai status', response.status, 'contentType', contentType, 'body', responseBody)
 
     if (!response.ok) {
       let details = responseBody
@@ -279,7 +281,7 @@ app.post('/api/ai/roadmap', async (req, res) => {
           const parsed = JSON.parse(responseBody)
           details = parsed.error || parsed.details || responseBody
         } catch {
-          // keep raw body
+          // keep raw body as details
         }
       }
       return res.status(response.status).json({ error: 'AI request failed', details })
