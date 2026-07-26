@@ -89,9 +89,30 @@ export default function RoadmapPage() {
                     {milestone.skills?.map((skill) => <span key={skill} className="rounded-full bg-white px-3 py-1 text-xs text-slate-700">{skill}</span>)}
                   </div>
                   <div className="mt-3">
-                    <p className="text-xs font-semibold text-slate-700">Resources</p>
+                    <p className="text-xs font-semibold text-slate-700">Recommended Learning Resources</p>
                     <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-600">
-                      {milestone.resources?.map((r) => <li key={r}>{r}</li>)}
+                      {milestone.resources?.map((r, rIdx) => {
+                        const urlMatch = typeof r === 'string' ? r.match(/\((https?:\/\/[^\s)]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\/[^\s)]*|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\)/) : null
+                        if (urlMatch) {
+                          const rawUrl = urlMatch[1]
+                          const targetUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`
+                          const title = r.replace(/\s*\([^)]*\)/, '')
+                          return (
+                            <li key={rIdx}>
+                              <span>{title}</span>{' '}
+                              <a
+                                href={targetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 font-semibold text-violet hover:underline text-xs"
+                              >
+                                🔗 {rawUrl}
+                              </a>
+                            </li>
+                          )
+                        }
+                        return <li key={rIdx}>{r}</li>
+                      })}
                     </ul>
                   </div>
                   {milestone.projects?.length > 0 && <div className="mt-3">

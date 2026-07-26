@@ -47,6 +47,41 @@ function getApiUrl(path) {
   return new URL(path, base).toString();
 }
 
+function getSpecificResourcesForSkills(skills = [], targetRole = '') {
+  const resourceMap = [
+    { keys: ['react', 'reactjs'], resources: ['React Official Documentation (react.dev)', 'freeCodeCamp - Learn React Full Course', 'Scrimba - Interactive React Bootcamp'] },
+    { keys: ['javascript', 'js', 'es6'], resources: ['MDN Web Docs - JavaScript Guide (developer.mozilla.org)', 'javascript.info - Modern JavaScript Tutorial', 'freeCodeCamp - JS Algorithms & Data Structures'] },
+    { keys: ['typescript'], resources: ['TypeScript Handbook (typescriptlang.org)', 'ExecuteProgram - TypeScript Core', 'Total TypeScript by Matt Pocock'] },
+    { keys: ['node', 'nodejs', 'express'], resources: ['Node.js Official Documentation (nodejs.org/docs)', 'The Odin Project - Node.js Curriculum', 'Express.js Getting Started Guide'] },
+    { keys: ['html', 'css', 'tailwind', 'sass'], resources: ['MDN Web Docs - HTML & CSS Essentials', 'Tailwind CSS Documentation (tailwindcss.com)', 'CSS-Tricks Fundamentals & Flexbox Guide'] },
+    { keys: ['sql', 'postgresql', 'postgres', 'mysql'], resources: ['PostgreSQL Tutorial (postgresqltutorial.com)', 'SQLBolt - Interactive SQL Lessons (sqlbolt.com)', 'Mode Analytics SQL Guide'] },
+    { keys: ['python', 'pandas', 'numpy'], resources: ['Python Official Documentation (docs.python.org)', 'Real Python Tutorials (realpython.com)', 'Kaggle Learn - Python & Data Analysis'] },
+    { keys: ['machine learning', 'ml', 'ai', 'deep learning'], resources: ['Fast.ai - Practical Deep Learning for Coders', 'Coursera - Machine Learning Specialization by Andrew Ng', 'Kaggle Learn - Machine Learning Courses'] },
+    { keys: ['docker', 'kubernetes', 'devops'], resources: ['Docker Official Docs & Getting Started (docs.docker.com)', 'KodeKloud - DevOps & Kubernetes Basics', 'Learn X in Y minutes - Docker'] },
+    { keys: ['aws', 'cloud', 'azure'], resources: ['AWS Skill Builder (skillbuilder.aws)', 'AWS Official Developer Documentation', 'freeCodeCamp - AWS Certified Practitioner Course'] },
+    { keys: ['git', 'github'], resources: ['Pro Git Book (git-scm.com/book)', 'GitHub Skills Interactive Tutorials (skills.github.com)'] },
+    { keys: ['system design', 'architecture'], resources: ['System Design Primer (github.com/donnemartin/system-design-primer)', 'ByteByteGo System Design Fundamentals'] },
+    { keys: ['figma', 'ui/ux', 'design'], resources: ['Figma Learn & Design Systems (figma.com/resources/learn)', 'UX Design Institute Guides'] },
+  ]
+
+  const matched = new Set()
+  const lowerSkills = skills.map((s) => String(s).toLowerCase())
+
+  resourceMap.forEach(({ keys, resources }) => {
+    if (keys.some((key) => lowerSkills.some((s) => s.includes(key)))) {
+      resources.forEach((r) => matched.add(r))
+    }
+  })
+
+  if (matched.size === 0) {
+    matched.add(`MDN Web Docs & Official Documentation for ${skills[0] || targetRole}`)
+    matched.add(`freeCodeCamp & YouTube Tutorials for ${skills[0] || targetRole}`)
+    matched.add(`Exercism.org & GitHub Interactive Labs`)
+  }
+
+  return Array.from(matched).slice(0, 4)
+}
+
 function createFallbackRoadmap(targetRole, currentSkills = [], missingSkills = {}) {
   const critical = Array.isArray(missingSkills.critical) ? missingSkills.critical : []
   const important = Array.isArray(missingSkills.important) ? missingSkills.important : []
@@ -62,7 +97,7 @@ function createFallbackRoadmap(targetRole, currentSkills = [], missingSkills = {
         title: `Phase 1: Master Core Fundamentals for ${targetRole}`,
         focus: 'Focus on high-priority critical skill gaps and core requirements.',
         skills: milestone1Skills,
-        resources: ['Official documentation & core guides', 'Hands-on practice exercises'],
+        resources: getSpecificResourcesForSkills(milestone1Skills, targetRole),
         estimatedWeeks: 4,
         projects: [`Build a foundational ${targetRole} project`],
       },
@@ -70,7 +105,7 @@ function createFallbackRoadmap(targetRole, currentSkills = [], missingSkills = {
         title: `Phase 2: Intermediate Capabilities & Workflow`,
         focus: 'Deepen knowledge in supporting tools and core framework capabilities.',
         skills: milestone2Skills,
-        resources: ['Developer tutorials & community examples', 'Architecture & pattern guides'],
+        resources: getSpecificResourcesForSkills(milestone2Skills, targetRole),
         estimatedWeeks: 4,
         projects: [`Develop a multi-feature portfolio application`],
       },
@@ -78,13 +113,13 @@ function createFallbackRoadmap(targetRole, currentSkills = [], missingSkills = {
         title: `Phase 3: Specialization & Career Readiness`,
         focus: 'Polish portfolio, performance optimization, and project deployment.',
         skills: milestone3Skills,
-        resources: ['System design guides', 'Production deployment tutorials'],
+        resources: getSpecificResourcesForSkills(milestone3Skills, targetRole),
         estimatedWeeks: 4,
         projects: [`Build capstone project for ${targetRole}`],
       },
     ],
     estimatedTotalWeeks: 12,
-    summary: `Personalized 12-week roadmap designed to transition into ${targetRole}, closing priority skill gaps while building on your existing experience.`,
+    summary: `Personalized 12-week roadmap designed to transition into ${targetRole}, closing priority skill gaps with specific learning resources while building on your existing experience.`,
   }
 }
 
@@ -284,11 +319,11 @@ app.post('/api/ai/roadmap', async (req, res) => {
   }
 
   const prompt = [
-    'You are a career roadmap planner. Create a structured learning roadmap to transition into the target role.',
+    'You are a career roadmap planner. Create a structured, highly specific learning roadmap to transition into the target role.',
     'Use the provided current skills and skill gaps to tailor the plan.',
     'Return only valid JSON. Do not add explanations or markdown fences.',
     'Schema: { milestones: [{ title, focus, skills: string[], resources: string[], estimatedWeeks: number, projects: string[] }], estimatedTotalWeeks: number, summary: string }',
-    'Do not invent specific course titles or providers. Keep resources generic like "official documentation", "beginner project", "community examples".',
+    'CRITICAL FOR RESOURCES: For each milestone, list 3 to 4 specific, real-world learning platforms, documentation hubs, interactive sites, or course names (e.g. "MDN Web Docs - JavaScript Guide", "freeCodeCamp - React Full Course", "Official PostgreSQL Tutorial (postgresqltutorial.com)", "Fast.ai - Deep Learning", "LeetCode / Exercism practice"). Do NOT use generic terms like "official documentation" or "community examples". Always specify exact, well-known platforms or documentation sites for each skill.',
   ].join(' ')
 
   const contents = [
