@@ -420,10 +420,23 @@ export default function RoadmapPage() {
                   </div>
                 </div>
 
+                {/* Interactive Progress Tracker Instruction Banner */}
+                <div className="rounded-2xl border border-mint/40 bg-gradient-to-r from-mint/15 to-violet/15 p-4 text-sm text-mint flex items-center gap-3.5 shadow-md">
+                  <span className="text-2xl shrink-0">☑️</span>
+                  <div>
+                    <p className="font-extrabold text-white text-sm sm:text-base">Tick the checkboxes below to mark items as complete</p>
+                    <p className="text-slate-300 text-xs mt-0.5 leading-relaxed">
+                      Click the checkbox next to any learning step, skill masterclass, or capstone project below as you complete them to automatically update your progress score in real-time.
+                    </p>
+                  </div>
+                </div>
+
                 {/* Animated Progress Bar */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                    <span>Progress Tracker</span>
+                    <span className="text-mint font-extrabold flex items-center gap-1.5">
+                      <span>📊</span> Progress Tracker
+                    </span>
                     <span>{metrics.completed} of {metrics.total} items completed</span>
                   </div>
                   <div className="h-4 w-full rounded-full bg-white/10 p-0.5 overflow-hidden border border-white/10 shadow-inner">
@@ -549,11 +562,16 @@ export default function RoadmapPage() {
                                             type="checkbox"
                                             checked={isDone}
                                             onChange={() => toggleItem(stepId)}
-                                            className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-violet focus:ring-violet cursor-pointer"
+                                            className="h-5 w-5 sm:h-6 sm:w-6 rounded-md border-2 border-mint bg-slate-900 text-mint accent-mint focus:ring-2 focus:ring-mint cursor-pointer hover:scale-110 transition-transform shrink-0 shadow-md"
                                           />
-                                          <h5 className={`font-bold text-sm sm:text-base ${isDone ? 'line-through text-slate-400' : 'text-white'}`}>
-                                            {step.topic}
-                                          </h5>
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <h5 className={`font-bold text-sm sm:text-base ${isDone ? 'line-through text-slate-400' : 'text-white'}`}>
+                                              {step.topic}
+                                            </h5>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${isDone ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-mint/15 text-mint border-mint/40'}`}>
+                                              {isDone ? '✓ Completed' : 'Tick to complete'}
+                                            </span>
+                                          </div>
                                         </div>
                                         {step.estimatedStudyTime && (
                                           <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">
@@ -658,11 +676,16 @@ export default function RoadmapPage() {
                                           type="checkbox"
                                           checked={isSkillDone}
                                           onChange={() => toggleItem(skillId)}
-                                          className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-violet focus:ring-violet cursor-pointer"
+                                          className="h-5 w-5 sm:h-6 sm:w-6 rounded-md border-2 border-mint bg-slate-900 text-mint accent-mint focus:ring-2 focus:ring-mint cursor-pointer hover:scale-110 transition-transform shrink-0 shadow-md"
                                         />
-                                        <h5 className={`font-extrabold text-base ${isSkillDone ? 'line-through text-slate-400' : 'text-white'}`}>
-                                          🎯 {sb.skill}
-                                        </h5>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <h5 className={`font-extrabold text-base ${isSkillDone ? 'line-through text-slate-400' : 'text-white'}`}>
+                                            🎯 {sb.skill}
+                                          </h5>
+                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${isSkillDone ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-mint/15 text-mint border-mint/40'}`}>
+                                            {isSkillDone ? '✓ Mastered' : 'Tick to complete'}
+                                          </span>
+                                        </div>
                                       </div>
                                       <span className="rounded-full bg-violet/20 border border-mint/20 px-2.5 py-0.5 text-[10px] font-bold text-mint">
                                         {isSkillDone ? '✅ Mastered' : 'Skill Masterclass'}
@@ -731,7 +754,7 @@ export default function RoadmapPage() {
                                   type="checkbox"
                                   checked={isProjDone}
                                   onChange={() => toggleItem(projId)}
-                                  className="h-5 w-5 rounded border-emerald-500 bg-slate-800 text-emerald-400 focus:ring-emerald-500 cursor-pointer"
+                                  className="h-6 w-6 rounded-md border-2 border-emerald-400 bg-slate-900 text-emerald-400 accent-emerald-400 focus:ring-2 focus:ring-emerald-400 cursor-pointer hover:scale-110 transition-transform shrink-0 shadow-md"
                                 />
                                 <div>
                                   <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
