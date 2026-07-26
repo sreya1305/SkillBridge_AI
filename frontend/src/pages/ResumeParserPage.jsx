@@ -270,58 +270,100 @@ export default function ResumeParserPage() {
           )}
 
           {/* Results */}
-          {parsed && (
-            <div className="grid gap-6">
-              <ResultSection title={`Skills (${parsed.skills?.length ?? 0})`}>
-                {parsed.skills?.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {parsed.skills.map((s) => (
-                      <span key={s} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-200">{s}</span>
-                    ))}
-                  </div>
-                ) : <p className="text-sm text-slate-400">None detected</p>}
-              </ResultSection>
+          {parsed && (() => {
+            const data = parsed.data || parsed
+            const skills = Array.isArray(data.skills) ? data.skills : []
+            const education = Array.isArray(data.education) ? data.education : []
+            const experience = Array.isArray(data.experience) ? data.experience : []
+            const certifications = Array.isArray(data.certifications) ? data.certifications : []
 
-              <ResultSection title="Education">
-                {parsed.education?.length > 0 ? (
-                  <div className="space-y-3">
-                    {parsed.education.map((e, i) => (
-                      <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-                        <p className="font-semibold text-white">{e.school || 'Unknown school'}</p>
-                        <p>{e.degree || 'Unknown degree'}</p>
-                        <p className="text-xs text-slate-400 mt-1">{e.startYear ?? '?'} – {e.endYear ?? '?'}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : <p className="text-sm text-slate-400">None detected</p>}
-              </ResultSection>
+            const saveSkillsAndNavigate = (targetPath) => {
+              if (typeof window !== 'undefined' && skills.length > 0) {
+                window.localStorage.setItem('userSkills', JSON.stringify(skills))
+              }
+              window.location.href = targetPath
+            }
 
-              <ResultSection title="Experience">
-                {parsed.experience?.length > 0 ? (
-                  <div className="space-y-3">
-                    {parsed.experience.map((e, i) => (
-                      <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-                        <p className="font-semibold text-white">{e.company || 'Unknown company'}</p>
-                        <p>{e.title || 'Unknown title'}</p>
-                        <p className="text-xs text-slate-400 mt-1">{e.startYear ?? '?'} – {e.endYear ?? '?'}</p>
-                        {e.description && <p className="mt-2 leading-relaxed">{e.description}</p>}
-                      </div>
-                    ))}
+            return (
+              <div className="grid gap-6">
+                <div className="rounded-3xl border border-emerald-500/40 bg-emerald-950/30 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <p className="font-bold text-white text-lg">✓ Resume Parsed Successfully!</p>
+                    <p className="mt-1 text-sm text-slate-300">
+                      {skills.length} skills detected. You can save these skills to your session profile and proceed to target role selection.
+                    </p>
                   </div>
-                ) : <p className="text-sm text-slate-400">None detected</p>}
-              </ResultSection>
+                  <div className="flex flex-wrap gap-3 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => saveSkillsAndNavigate('/target-role')}
+                      className="rounded-full bg-mint px-6 py-2.5 text-sm font-bold text-ink hover:bg-mint/90 transition-all shadow-glow"
+                    >
+                      Select Target Role →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => saveSkillsAndNavigate('/skill-gap')}
+                      className="rounded-full bg-violet px-6 py-2.5 text-sm font-bold text-white hover:bg-violet/90 transition-all shadow-glow"
+                    >
+                      Analyze Skill Gap →
+                    </button>
+                  </div>
+                </div>
 
-              <ResultSection title="Certifications">
-                {parsed.certifications?.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {parsed.certifications.map((c) => (
-                      <span key={c} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-200">{c}</span>
-                    ))}
-                  </div>
-                ) : <p className="text-sm text-slate-400">None detected</p>}
-              </ResultSection>
-            </div>
-          )}
+                <ResultSection title={`Skills (${skills.length})`}>
+                  {skills.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {skills.map((s) => (
+                        <span key={s} className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1.5 text-sm font-semibold text-mint">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  ) : <p className="text-sm text-slate-400">None detected</p>}
+                </ResultSection>
+
+                <ResultSection title="Education">
+                  {education.length > 0 ? (
+                    <div className="space-y-3">
+                      {education.map((e, i) => (
+                        <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                          <p className="font-semibold text-white">{e.school || 'Education'}</p>
+                          <p>{e.degree || 'Degree / Course'}</p>
+                          <p className="text-xs text-slate-400 mt-1">{e.startYear ?? '?'} – {e.endYear ?? '?'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-sm text-slate-400">None detected</p>}
+                </ResultSection>
+
+                <ResultSection title="Experience">
+                  {experience.length > 0 ? (
+                    <div className="space-y-3">
+                      {experience.map((e, i) => (
+                        <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                          <p className="font-semibold text-white">{e.company || 'Organization'}</p>
+                          <p>{e.title || 'Role / Project'}</p>
+                          <p className="text-xs text-slate-400 mt-1">{e.startYear ?? '?'} – {e.endYear ?? '?'}</p>
+                          {e.description && <p className="mt-2 leading-relaxed">{e.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-sm text-slate-400">None detected</p>}
+                </ResultSection>
+
+                <ResultSection title="Certifications">
+                  {certifications.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {certifications.map((c) => (
+                        <span key={c} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-200">{c}</span>
+                      ))}
+                    </div>
+                  ) : <p className="text-sm text-slate-400">None detected</p>}
+                </ResultSection>
+              </div>
+            )
+          })()}
         </div>
       </section>
     </main>

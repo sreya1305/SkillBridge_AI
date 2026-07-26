@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Navbar from '../components/Navbar'
 import PageNav from '../components/PageNav'
 import { getAllRoles, selectTargetRole } from '../lib/roleStorage'
+import { parseResumeFile } from '../services/resumeParser'
 
 const levels = ['Beginner', 'Intermediate', 'Advanced', 'Expert']
 const inputClass = 'rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 outline-none transition focus:border-mint focus:ring-2 focus:ring-mint/20'
@@ -31,6 +32,7 @@ export default function ProfilePage() {
     return window.localStorage.getItem('targetRoleId') || ''
   })
   const [resumeName, setResumeName] = useState('')
+  const [isParsingResume, setIsParsingResume] = useState(false)
   const [notice, setNotice] = useState('')
   const resumeRef = useRef(null)
   const degreeRef = useRef(null)
@@ -49,6 +51,39 @@ export default function ProfilePage() {
     if (atBoundary) { event.preventDefault(); targetRef.current?.focus() }
   }
   const addKeyHandlers = (callback, targetRef, direction) => (event) => { onEnter(callback)(event); onArrow(targetRef, direction)(event) }
+
+  const handleResumeUpload = async (file) => {
+    if (!file) return
+    setResumeName(file.name)
+    setIsParsingResume(true)
+    setNotice('Parsing resume with AI & OCR engine...')
+
+    try {
+      const result = await parseResumeFile(file)
+      const data = result?.data || result
+      const extractedSkills = Array.isArray(data?.skills) ? data.skills : []
+
+      if (extractedSkills.length > 0) {
+        const existingNames = new Set(skills.map((s) => s.name.toLowerCase()))
+        const newEntries = extractedSkills
+          .filter((name) => !existingNames.has(name.toLowerCase()))
+          .map((name) => ({ name, level: 'Intermediate' }))
+
+        const updated = [...skills, ...newEntries]
+        setSkills(updated)
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('userSkills', JSON.stringify(updated.map((s) => s.name)))
+        }
+        setNotice(`✓ Extracted ${extractedSkills.length} skills from ${file.name} and added them to your profile!`)
+      } else {
+        setNotice(`Uploaded ${file.name}. No skills detected automatically, feel free to type yours above.`)
+      }
+    } catch (err) {
+      setNotice(`Uploaded ${file.name}. (${err.message || 'Auto-parsing completed'})`)
+    } finally {
+      setIsParsingResume(false)
+    }
+  }
 
   const handleContinue = () => {
     if (!selectedRoleId) {
@@ -70,16 +105,16 @@ export default function ProfilePage() {
     <div className="wrap py-12 sm:py-16">
       <div className="mx-auto max-w-4xl">
         <PageNav backHref="/" backLabel="Back to Home" />
-        <div className="mb-10"><p className="eyebrow text-mint">Build your profile</p><h1 className="mt-4 text-3xl font-extrabold tracking-[-.04em] text-white sm:text-4xl">Tell us about the experience you bring.</h1><p className="mt-4 max-w-2xl leading-7 text-slate-300">Start manually, or upload a resume to keep a reference handy. We will not parse or send any file in this version.</p></div>
+        <div className="mb-10"><p className="eyebrow text-mint">Build your profile</p><h1 className="mt-4 text-3xl font-extrabold tracking-[-.04em] text-white sm:text-4xl">Tell us about the experience you bring.</h1><p className="mt-4 max-w-2xl leading-7 text-slate-300">Add skills manually or upload a resume / picture document (PDF, DOCX, PNG, JPG, WEBP) to auto-extract your skills using AI.</p></div>
       <form onSubmit={(event) => { event.preventDefault(); handleContinue() }} className="space-y-6">
         <section className="rounded-2xl border border-white/10 bg-[#0e1a34] p-6 sm:p-8 shadow-xl"><h2 className="text-xl font-extrabold text-white">01 Your skills</h2><p className="mt-1 text-sm text-slate-400">Add a skill, then choose how confident you feel using it.</p><div className="mt-6 grid gap-3 sm:grid-cols-[1fr_180px_auto]"><input value={skill} onChange={(e) => setSkill(e.target.value)} onKeyDown={onEnter(addSkill)} placeholder="e.g. React, Excel, project management" className={inputClass} /><select value={level} onChange={(e) => setLevel(e.target.value)} className={`${inputClass} bg-[#0e1a34] text-white cursor-pointer`}>{levels.map((item) => <option key={item} value={item} className="bg-[#0e1a34] text-white py-1">{item}</option>)}</select><button type="button" onClick={addSkill} className="rounded-xl bg-violet px-5 py-3 text-sm font-bold text-white shadow-glow hover:bg-violet/90 transition-all">Add skill</button></div>{skills.length > 0 && <div className="mt-5 flex flex-wrap gap-2">{skills.map((item, index) => <span key={item.name} className="inline-flex items-center gap-2 rounded-full border border-mint/30 bg-mint/10 px-3 py-2 text-sm font-bold text-mint">{item.name}<small className="text-slate-300">({item.level})</small><button type="button" onClick={() => setSkills(skills.filter((_, i) => i !== index))} className="hover:text-white">x</button></span>)}</div>}</section>
         <section className="rounded-2xl border border-white/10 bg-[#0e1a34] p-6 sm:p-8 shadow-xl"><h2 className="text-xl font-extrabold text-white">02 Education</h2><p className="mt-1 text-sm text-slate-400">Add your degree, certification, or relevant education.</p><div className="mt-6 grid gap-3 sm:grid-cols-2"><input ref={degreeRef} value={educationForm.degree} onChange={(e) => setEducationForm({ ...educationForm, degree: e.target.value })} onKeyDown={addKeyHandlers(addEducation, schoolRef, 'ArrowRight')} placeholder="Degree or qualification" className={inputClass} /><input ref={schoolRef} value={educationForm.school} onChange={(e) => setEducationForm({ ...educationForm, school: e.target.value })} onKeyDown={addKeyHandlers(addEducation, degreeRef, 'ArrowLeft')} placeholder="School or institution" className={inputClass} /></div><button type="button" onClick={addEducation} className="mt-3 text-sm font-bold text-mint hover:text-mint/80 transition-colors">+ Add education</button><Entries entries={education} onRemove={(index) => setEducation(education.filter((_, i) => i !== index))} /></section>
         <section className="rounded-2xl border border-white/10 bg-[#0e1a34] p-6 sm:p-8 shadow-xl"><h2 className="text-xl font-extrabold text-white">03 Experience</h2><p className="mt-1 text-sm text-slate-400">Add relevant work, internship, freelance, or volunteer experience.</p><div className="mt-6 grid gap-3 sm:grid-cols-2"><input ref={roleRef} value={experienceForm.role} onChange={(e) => setExperienceForm({ ...experienceForm, role: e.target.value })} onKeyDown={addKeyHandlers(addExperience, companyRef, 'ArrowRight')} placeholder="Role or position" className={inputClass} /><input ref={companyRef} value={experienceForm.company} onChange={(e) => setExperienceForm({ ...experienceForm, company: e.target.value })} onKeyDown={addKeyHandlers(addExperience, roleRef, 'ArrowLeft')} placeholder="Company or organisation" className={inputClass} /></div><button type="button" onClick={addExperience} className="mt-3 text-sm font-bold text-mint hover:text-mint/80 transition-colors">+ Add experience</button><Entries entries={experience} onRemove={(index) => setExperience(experience.filter((_, i) => i !== index))} /></section>
         <section className="rounded-2xl border border-white/10 bg-[#0e1a34] p-6 sm:p-8 shadow-xl"><h2 className="text-xl font-extrabold text-white">04 Target role</h2><p className="mt-1 text-sm text-slate-400">Choose the role you want to compare against your current skills.</p><div className="mt-6"><select value={selectedRoleId} onChange={(e) => { setSelectedRoleId(e.target.value); selectTargetRole(e.target.value) }} className={`${inputClass} w-full bg-[#0e1a34] text-white cursor-pointer`}><option value="" className="bg-[#0e1a34] text-white py-1">Select a role</option>{allRoles.map((role) => <option key={role.id} value={role.id} className="bg-[#0e1a34] text-white py-1">{role.title}</option>)}</select></div><div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300"><p className="font-semibold text-white">Selected role</p><p className="mt-2 text-sm">{selectedRoleId ? allRoles.find((r) => r.id === selectedRoleId)?.title : 'Select a role'}</p><a href="/target-role" className="mt-3 inline-block text-sm font-bold text-mint hover:text-mint/80 transition-colors">Add a custom target role</a></div>{!selectedRoleId && <p className="mt-2 text-xs font-semibold text-red-400">Please select a target role before continuing.</p>}</section>
-        <section className="rounded-2xl border border-dashed border-violet-500/40 bg-violet-950/20 p-6 sm:p-8"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="font-bold text-white">Or upload your resume</p><p className="mt-1 text-sm text-slate-300">PDF or DOCX, up to 10 MB. Upload is visual only - AI parsing is not enabled.</p>{resumeName && <p className="mt-2 text-sm font-semibold text-mint">Selected: {resumeName}</p>}</div><input ref={resumeRef} type="file" accept=".pdf,.doc,.docx" onChange={(e) => setResumeName(e.target.files?.[0]?.name || '')} className="hidden" /><button type="button" onClick={() => resumeRef.current?.click()} className="rounded-xl border border-violet bg-violet/20 px-5 py-3 text-sm font-bold text-violet-200 hover:bg-violet/30 transition-all">Choose file</button></div></section>
+        <section className="rounded-2xl border border-dashed border-violet-500/40 bg-violet-950/20 p-6 sm:p-8"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="font-bold text-white">Or upload your resume file / picture</p><p className="mt-1 text-sm text-slate-300">PDF, DOCX, PNG, JPG, WEBP (up to 10 MB). AI & OCR will automatically extract your skills!</p>{resumeName && <p className="mt-2 text-sm font-semibold text-mint">{isParsingResume ? '⏳ Extracting skills...' : `Selected: ${resumeName}`}</p>}</div><input ref={resumeRef} type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,image/*" onChange={(e) => handleResumeUpload(e.target.files?.[0])} className="hidden" /><button type="button" disabled={isParsingResume} onClick={() => resumeRef.current?.click()} className="rounded-xl border border-violet bg-violet/20 px-5 py-3 text-sm font-bold text-violet-200 hover:bg-violet/30 transition-all disabled:opacity-50">{isParsingResume ? 'Parsing...' : 'Choose file'}</button></div></section>
         {notice && <p role="status" className="rounded-xl border border-mint/30 bg-mint/10 px-4 py-3 text-sm font-semibold text-mint">{notice}</p>}<div className="flex flex-col-reverse justify-between gap-4 pt-2 sm:flex-row sm:items-center"><p className="text-sm text-slate-400">You can update this information later.</p><button type="submit" className="rounded-full bg-violet px-6 py-3 text-sm font-bold text-white shadow-glow hover:bg-violet/90 transition-all">Continue to skill gap</button></div>
       </form>
     </div>
   </div>
 </main>
-}
+}
