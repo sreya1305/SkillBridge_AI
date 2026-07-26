@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Navbar from '../components/Navbar'
+import PageNav from '../components/PageNav'
 import { parseResume } from '../services/resumeParser'
 
 export default function ResumeParserPage() {
@@ -29,6 +30,7 @@ export default function ResumeParserPage() {
     <Navbar />
     <section className="wrap py-16">
       <div className="mx-auto max-w-5xl space-y-8">
+        <PageNav backHref="/" backLabel="Back to Home" />
         <div className="rounded-3xl border border-white/10 bg-[#0e1a34] p-10 shadow-xl">
           <div>
             <p className="eyebrow text-mint">Resume analysis</p>

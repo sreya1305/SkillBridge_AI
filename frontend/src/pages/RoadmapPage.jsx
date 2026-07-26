@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
+import PageNav from '../components/PageNav'
 import { getSkillGapAnalysis } from '../lib/skillGap'
 import { getSelectedRole } from '../lib/roleStorage'
 import { generateRoadmap } from '../services/roadmapGenerator'
@@ -343,10 +344,8 @@ export default function RoadmapPage() {
       <div className="absolute right-[-10rem] top-1/4 -z-10 h-[600px] w-[600px] rounded-full bg-mint/15 blur-[160px] pointer-events-none" />
       <div className="absolute left-[-10rem] bottom-20 -z-10 h-[500px] w-[500px] rounded-full bg-mint/10 blur-[150px] pointer-events-none" />
       <Navbar />
-      <div className="wrap py-4">
-        <a href="/profile" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white transition">
-          ← Back to profile
-        </a>
+      <div className="wrap pt-6">
+        <PageNav backHref="/skill-gap" backLabel="Back to Skill Gap" />
       </div>
       <section className="wrap pb-16">
         <div className="mx-auto max-w-5xl space-y-8">

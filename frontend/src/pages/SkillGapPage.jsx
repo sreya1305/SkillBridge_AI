@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import Navbar from '../components/Navbar'
+import PageNav from '../components/PageNav'
 import { getSkillGapAnalysis } from '../lib/skillGap'
 import { getSelectedRole } from '../lib/roleStorage'
 
@@ -22,6 +23,7 @@ export default function SkillGapPage() {
     <Navbar />
     <section className="wrap py-16">
       <div className="mx-auto max-w-6xl space-y-8">
+        <PageNav backHref="/profile" backLabel="Back to Profile" />
         <div className="rounded-3xl border border-white/10 bg-[#0e1a34] p-10 shadow-xl">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div>

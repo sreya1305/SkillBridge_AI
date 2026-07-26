@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Navbar from '../components/Navbar'
+import PageNav from '../components/PageNav'
 import RoleCard from '../components/RoleCard'
 import { getAllRoles, saveCustomRole, selectTargetRole } from '../lib/roleStorage'
 import { generateRoleSkills } from '../services/roleSkillGenerator'
@@ -108,6 +109,7 @@ export default function TargetRolePage() {
     <Navbar />
     <section className="wrap py-16">
       <div className="mx-auto max-w-5xl">
+        <PageNav backHref="/profile" backLabel="Back to Profile" />
         <div className="rounded-3xl border border-white/10 bg-[#0e1a34] p-10 shadow-xl">
           <div className="mb-8">
             <p className="eyebrow text-mint">Choose a target role</p>
