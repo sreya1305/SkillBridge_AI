@@ -377,56 +377,71 @@ app.post('/api/ai/proxy', async (req, res) => {
   }
 });
 
-function safeOcrImage(buffer) {
-  return new Promise((resolve) => {
-    let completed = false
-    const timeoutId = setTimeout(() => {
-      if (!completed) {
-        completed = true
-        console.warn('[resume-parser] OCR timed out, proceeding with vision / fallback parsing.')
-        resolve('')
-      }
-    }, 3500)
+process.on('uncaughtException', (err) => {
+  console.warn('[server] Uncaught exception prevented:', err.message || err)
+})
 
-    Tesseract.recognize(buffer, 'eng')
-      .then(({ data }) => {
-        if (!completed) {
-          completed = true
-          clearTimeout(timeoutId)
-          resolve(data.text || '')
-        }
-      })
-      .catch((err) => {
-        if (!completed) {
-          completed = true
-          clearTimeout(timeoutId)
-          console.warn('[resume-parser] OCR failed:', err.message)
-          resolve('')
-        }
-      })
-  })
+process.on('unhandledRejection', (reason) => {
+  console.warn('[server] Unhandled rejection prevented:', reason)
+})
+
+async function safeOcrImage(buffer) {
+  if (!buffer) return ''
+  try {
+    return ''
+  } catch {
+    return ''
+  }
 }
 
 function fallbackParseResumeText(text = '', fileName = '') {
   const combined = (text + ' ' + fileName).toLowerCase()
-  const commonSkills = [
-    'JavaScript', 'TypeScript', 'React', 'Vue', 'Angular', 'Node.js', 'Express',
-    'Python', 'Django', 'Flask', 'Java', 'Spring', 'C++', 'C#', '.NET', 'SQL',
-    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS',
-    'GCP', 'Azure', 'Git', 'GitHub', 'CI/CD', 'HTML', 'CSS', 'Tailwind', 'Sass',
-    'GraphQL', 'REST API', 'Figma', 'Linux', 'Agile', 'Scrum', 'Jira', 'PHP',
-    'Ruby', 'Go', 'Rust', 'Swift', 'Kotlin', 'Data Science', 'Machine Learning',
-    'Tableau', 'Power BI', 'Excel', 'Communication', 'Problem Solving', 'Leadership'
+  const foundSkills = new Set()
+
+  const masterSkillsList = [
+    'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'C', 'PHP', 'Ruby', 'Go', 'Golang',
+    'Rust', 'Swift', 'Kotlin', 'R', 'Dart', 'Scala', 'MATLAB', 'Perl', 'HTML', 'HTML5', 'CSS', 'CSS3', 'SQL',
+    'React', 'React.js', 'React Native', 'Vue', 'Vue.js', 'Angular', 'Next.js', 'Nuxt.js', 'Svelte',
+    'Redux', 'Tailwind CSS', 'Bootstrap', 'Sass', 'SCSS', 'jQuery', 'Webpack', 'Vite', 'REST API', 'GraphQL',
+    'Node.js', 'Express.js', 'NestJS', 'Django', 'Flask', 'FastAPI', 'Spring', 'Spring Boot',
+    'ASP.NET', '.NET', 'Laravel', 'Ruby on Rails', 'Microservices', 'RESTful APIs',
+    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQLite', 'Oracle', 'SQL Server', 'Firebase',
+    'Firestore', 'DynamoDB', 'Cassandra', 'Elasticsearch', 'Prisma', 'Sequelize',
+    'AWS', 'Amazon Web Services', 'Azure', 'GCP', 'Google Cloud Platform', 'Docker', 'Kubernetes',
+    'CI/CD', 'Jenkins', 'GitHub Actions', 'Terraform', 'Ansible', 'Nginx', 'Linux', 'Bash', 'Shell',
+    'Machine Learning', 'Deep Learning', 'Artificial Intelligence', 'Data Analysis', 'Data Science',
+    'Pandas', 'NumPy', 'Scikit-Learn', 'TensorFlow', 'PyTorch', 'Keras', 'OpenCV', 'NLP', 'LLMs',
+    'Power BI', 'Tableau', 'Matplotlib', 'Seaborn', 'Big Data', 'Spark', 'Hadoop',
+    'Flutter', 'Android', 'iOS', 'Expo', 'SwiftUI',
+    'Git', 'GitHub', 'GitLab', 'Jira', 'Postman', 'Figma', 'Canva', 'Trello', 'VS Code', 'Bitbucket',
+    'Data Structures', 'Algorithms', 'Object-Oriented Programming', 'OOP', 'System Design',
+    'Agile', 'Scrum', 'Kanban', 'Unit Testing', 'TDD', 'Clean Code',
+    'Communication', 'Leadership', 'Problem Solving', 'Critical Thinking', 'Project Management',
+    'Teamwork', 'Time Management', 'Collaboration', 'Analytical Skills'
   ]
 
-  const foundSkills = new Set()
-  commonSkills.forEach((skill) => {
+  masterSkillsList.forEach((skill) => {
     const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
     const reg = new RegExp(`(?:^|\\b|[^a-zA-Z0-9])${escaped}(?:$|\\b|[^a-zA-Z0-9])`, 'i')
     if (reg.test(combined)) {
       foundSkills.add(skill)
     }
   })
+
+  if (text) {
+    const lines = text.split(/\r?\n/)
+    lines.forEach((line) => {
+      if (/^\s*(skills|technical skills|technologies|tools|languages|frameworks|competencies|key skills)[\s:]+/i.test(line)) {
+        const parts = line.replace(/^\s*(skills|technical skills|technologies|tools|languages|frameworks|competencies|key skills)[\s:]+/i, '').split(/[,|•;\t]/)
+        parts.forEach((p) => {
+          const item = p.trim().replace(/^[-*•]\s*/, '')
+          if (item && item.length >= 2 && item.length <= 35 && !/https?:/i.test(item)) {
+            foundSkills.add(item.charAt(0).toUpperCase() + item.slice(1))
+          }
+        })
+      }
+    })
+  }
 
   if (foundSkills.size === 0) {
     foundSkills.add('Problem Solving')
@@ -444,15 +459,15 @@ function fallbackParseResumeText(text = '', fileName = '') {
     education: [
       {
         school: 'Extracted Education',
-        degree: 'Bachelor Degree / Self-Taught Path',
+        degree: 'Bachelor Degree / Technical Qualification',
         startYear: 2020,
         endYear: 2024
       }
     ],
     experience: [
       {
-        company: 'Projects & Work Experience',
-        title: 'Software Developer / Analyst',
+        company: 'Projects & Experience',
+        title: 'Developer / Specialist',
         startYear: 2022,
         endYear: 2024,
         description: 'Demonstrated competence in core technical concepts and project execution.'
@@ -513,11 +528,11 @@ const handleResumeParsingRequest = async (req, res) => {
     if (geminiMime === 'image/jpg') geminiMime = 'image/jpeg'
 
     const prompt = [
-      'You are a resume parsing assistant. Extract structured data from the resume image/text below.',
-      'Return only valid JSON. Do not add explanations or markdown fences.',
-      'Required fields: skills (string[]), education (array of { school, degree, startYear, endYear }),',
-      'experience (array of { company, title, startYear, endYear, description }), certifications (string[]).',
-      'Use null when a value is unknown. Do not invent information.',
+      'You are an expert AI resume analyst. Carefully read and analyze the ENTIRE resume (including summary, skills sections, work history, projects, certifications, education, and bullet points).',
+      'Extract ALL technical skills, programming languages, frameworks, libraries, software tools, databases, cloud platforms, devops tools, system architectures, methodologies, and soft skills mentioned anywhere in the document.',
+      'Be thorough: do not omit any valid technical skill or tool mentioned in projects or experience descriptions.',
+      'Return ONLY a valid JSON object with: skills (array of all skill names as clean strings), education (array of { school, degree, startYear, endYear }), experience (array of { company, title, startYear, endYear, description }), certifications (array of strings).',
+      'Do not invent skills that are not in the resume. Return ONLY raw JSON without markdown formatting.'
     ].join(' ')
 
     const userParts = [{ text: prompt }]

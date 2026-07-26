@@ -296,17 +296,10 @@ export default function ResumeParserPage() {
                   <div className="flex flex-wrap gap-3 shrink-0">
                     <button
                       type="button"
-                      onClick={() => saveSkillsAndNavigate('/target-role')}
-                      className="rounded-full bg-mint px-6 py-2.5 text-sm font-bold text-ink hover:bg-mint/90 transition-all shadow-glow"
+                      onClick={() => saveSkillsAndNavigate('/profile#target-role')}
+                      className="rounded-full bg-mint px-7 py-3 text-sm font-bold text-ink hover:bg-mint/90 transition-all shadow-glow"
                     >
                       Select Target Role →
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => saveSkillsAndNavigate('/skill-gap')}
-                      className="rounded-full bg-violet px-6 py-2.5 text-sm font-bold text-white hover:bg-violet/90 transition-all shadow-glow"
-                    >
-                      Analyze Skill Gap →
                     </button>
                   </div>
                 </div>
