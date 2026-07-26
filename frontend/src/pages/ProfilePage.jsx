@@ -22,8 +22,22 @@ export default function ProfilePage() {
       return []
     }
   })
-  const [education, setEducation] = useState([])
-  const [experience, setExperience] = useState([])
+  const [education, setEducation] = useState(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      return JSON.parse(window.localStorage.getItem('userEducation') || '[]')
+    } catch {
+      return []
+    }
+  })
+  const [experience, setExperience] = useState(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      return JSON.parse(window.localStorage.getItem('userExperience') || '[]')
+    } catch {
+      return []
+    }
+  })
   const [educationForm, setEducationForm] = useState({ degree: '', school: '' })
   const [experienceForm, setExperienceForm] = useState({ role: '', company: '' })
   const [allRoles] = useState(() => getAllRoles())
@@ -40,9 +54,9 @@ export default function ProfilePage() {
   const roleRef = useRef(null)
   const companyRef = useRef(null)
 
-  const addSkill = () => { const name = skill.trim(); if (!name || skills.some((item) => item.name.toLowerCase() === name.toLowerCase())) return; setSkills([...skills, { name, level }]); setSkill('') }
-  const addEducation = () => { const { degree, school } = educationForm; if (!degree.trim() || !school.trim()) return; setEducation([...education, { title: degree.trim(), detail: `at ${school.trim()}` }]); setEducationForm({ degree: '', school: '' }) }
-  const addExperience = () => { const { role, company } = experienceForm; if (!role.trim() || !company.trim()) return; setExperience([...experience, { title: role.trim(), detail: `at ${company.trim()}` }]); setExperienceForm({ role, company: '' }) }
+  const addSkill = () => { const name = skill.trim(); if (!name || skills.some((item) => item.name.toLowerCase() === name.toLowerCase())) return; const updated = [...skills, { name, level }]; setSkills(updated); setSkill(''); if (typeof window !== 'undefined') window.localStorage.setItem('userSkills', JSON.stringify(updated.map(s => s.name))) }
+  const addEducation = () => { const { degree, school } = educationForm; if (!degree.trim() || !school.trim()) return; const updated = [...education, { title: degree.trim(), detail: `at ${school.trim()}` }]; setEducation(updated); setEducationForm({ degree: '', school: '' }); if (typeof window !== 'undefined') window.localStorage.setItem('userEducation', JSON.stringify(updated)) }
+  const addExperience = () => { const { role, company } = experienceForm; if (!role.trim() || !company.trim()) return; const updated = [...experience, { title: role.trim(), detail: `at ${company.trim()}` }]; setExperience(updated); setExperienceForm({ role: '', company: '' }); if (typeof window !== 'undefined') window.localStorage.setItem('userExperience', JSON.stringify(updated)) }
   const onEnter = (callback) => (event) => { if (event.key === 'Enter') { event.preventDefault(); callback() } }
   const onArrow = (targetRef, direction) => (event) => {
     if (event.key !== direction) return
@@ -73,22 +87,56 @@ export default function ProfilePage() {
       const result = await parseResumeFile(file)
       const data = result?.data || result
       const extractedSkills = Array.isArray(data?.skills) ? data.skills : []
+      const extractedEdu = Array.isArray(data?.education) ? data.education : []
+      const extractedExp = Array.isArray(data?.experience) ? data.experience : []
 
+      let updatedSkills = skills
       if (extractedSkills.length > 0) {
         const existingNames = new Set(skills.map((s) => s.name.toLowerCase()))
         const newEntries = extractedSkills
-          .filter((name) => !existingNames.has(name.toLowerCase()))
+          .filter((name) => typeof name === 'string' && !existingNames.has(name.toLowerCase()))
           .map((name) => ({ name, level: 'Intermediate' }))
-
-        const updated = [...skills, ...newEntries]
-        setSkills(updated)
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('userSkills', JSON.stringify(updated.map((s) => s.name)))
-        }
-        setNotice(`✓ Extracted ${extractedSkills.length} skills from ${file.name} and added them to your profile!`)
-      } else {
-        setNotice(`Uploaded ${file.name}. No skills detected automatically, feel free to type yours above.`)
+        updatedSkills = [...skills, ...newEntries]
+        setSkills(updatedSkills)
       }
+
+      let updatedEdu = education
+      if (extractedEdu.length > 0) {
+        const formattedNewEdu = extractedEdu.map((e) => {
+          const deg = e.degree || e.title || ''
+          const sch = e.school || e.detail || ''
+          const years = e.startYear && e.endYear ? ` (${e.startYear}-${e.endYear})` : ''
+          return {
+            title: deg || 'Education / Degree',
+            detail: sch ? `at ${sch}${years}` : years
+          }
+        })
+        updatedEdu = [...education, ...formattedNewEdu]
+        setEducation(updatedEdu)
+      }
+
+      let updatedExp = experience
+      if (extractedExp.length > 0) {
+        const formattedNewExp = extractedExp.map((e) => {
+          const roleTitle = e.title || e.role || ''
+          const companyName = e.company || e.detail || ''
+          const desc = e.description && e.description !== roleTitle ? ` - ${e.description}` : ''
+          return {
+            title: roleTitle || 'Experience / Role',
+            detail: companyName ? `at ${companyName}${desc}` : desc
+          }
+        })
+        updatedExp = [...experience, ...formattedNewExp]
+        setExperience(updatedExp)
+      }
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('userSkills', JSON.stringify(updatedSkills.map((s) => s.name)))
+        window.localStorage.setItem('userEducation', JSON.stringify(updatedEdu))
+        window.localStorage.setItem('userExperience', JSON.stringify(updatedExp))
+      }
+
+      setNotice(`✓ Resume parsed! Extracted ${extractedSkills.length} skills, ${extractedEdu.length} education, and ${extractedExp.length} experience entries!`)
     } catch (err) {
       setNotice(`Uploaded ${file.name}. (${err.message || 'Auto-parsing completed'})`)
     } finally {
@@ -103,6 +151,8 @@ export default function ProfilePage() {
     }
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('userSkills', JSON.stringify(skills.map((s) => s.name)))
+      window.localStorage.setItem('userEducation', JSON.stringify(education))
+      window.localStorage.setItem('userExperience', JSON.stringify(experience))
       window.localStorage.setItem('targetRoleId', selectedRoleId)
     }
     window.location.href = '/skill-gap'

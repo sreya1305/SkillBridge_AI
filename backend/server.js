@@ -387,9 +387,20 @@ process.on('unhandledRejection', (reason) => {
 
 async function safeOcrImage(buffer) {
   if (!buffer) return ''
+  let worker = null
   try {
-    return ''
-  } catch {
+    console.log('[resume-parser] Running Tesseract OCR worker on image buffer...')
+    worker = await Tesseract.createWorker('eng')
+    const { data } = await worker.recognize(buffer)
+    await worker.terminate()
+    const extractedText = data?.text || ''
+    console.log('[resume-parser] OCR successfully extracted', extractedText.length, 'characters of text.')
+    return extractedText
+  } catch (err) {
+    console.warn('[resume-parser] OCR text extraction warning:', err.message)
+    if (worker) {
+      try { await worker.terminate() } catch {}
+    }
     return ''
   }
 }
@@ -416,6 +427,7 @@ function fallbackParseResumeText(text = '', fileName = '') {
     'Git', 'GitHub', 'GitLab', 'Jira', 'Postman', 'Figma', 'Canva', 'Trello', 'VS Code', 'Bitbucket',
     'Data Structures', 'Algorithms', 'Object-Oriented Programming', 'OOP', 'System Design',
     'Agile', 'Scrum', 'Kanban', 'Unit Testing', 'TDD', 'Clean Code',
+    'Coding', 'Debugging', 'Database', 'Software Development',
     'Communication', 'Leadership', 'Problem Solving', 'Critical Thinking', 'Project Management',
     'Teamwork', 'Time Management', 'Collaboration', 'Analytical Skills'
   ]
@@ -428,52 +440,108 @@ function fallbackParseResumeText(text = '', fileName = '') {
     }
   })
 
+  // 1. Education Section Block Extraction
+  const educationEntries = []
   if (text) {
-    const lines = text.split(/\r?\n/)
-    lines.forEach((line) => {
-      if (/^\s*(skills|technical skills|technologies|tools|languages|frameworks|competencies|key skills)[\s:]+/i.test(line)) {
-        const parts = line.replace(/^\s*(skills|technical skills|technologies|tools|languages|frameworks|competencies|key skills)[\s:]+/i, '').split(/[,|•;\t]/)
-        parts.forEach((p) => {
-          const item = p.trim().replace(/^[-*•]\s*/, '')
-          if (item && item.length >= 2 && item.length <= 35 && !/https?:/i.test(item)) {
-            foundSkills.add(item.charAt(0).toUpperCase() + item.slice(1))
-          }
-        })
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+    let inEdu = false
+    let degree = ''
+    let school = ''
+    let startYear = null
+    let endYear = null
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+
+      if (/^\s*(education|academic|qualifications)[\s:]*$/i.test(line)) {
+        inEdu = true
+        continue
+      } else if (inEdu && /^\s*(skills|experience|work|projects|summary|references)[\s:]*$/i.test(line)) {
+        inEdu = false
+        break
       }
-    })
+
+      if (inEdu || /Bachelor|Master|B\.?S|B\.?Tech|Degree|Diploma|University|College/i.test(line)) {
+        if (/Bachelor|Master|B\.?S|B\.?Tech|Degree|Diploma/i.test(line)) {
+          degree = line.replace(/^[•*\-\s]+/, '')
+        } else if (/University|College|Institute|School|Academy/i.test(line)) {
+          school = line.replace(/^[•*\-\s]+/, '')
+        }
+
+        const years = line.match(/\b(19\d\d|20\d\d)\s*[-–to]+\s*(19\d\d|20\d\d|present|current)\b/i)
+        if (years) {
+          startYear = parseInt(years[1], 10)
+          endYear = years[2].toLowerCase().includes('pres') ? 2026 : parseInt(years[2], 10)
+        }
+      }
+    }
+
+    if (degree || school) {
+      educationEntries.push({
+        school: school || 'University / Institution',
+        degree: degree || 'Degree / Qualification',
+        startYear: startYear || 2017,
+        endYear: endYear || 2021
+      })
+    }
   }
 
-  if (foundSkills.size === 0) {
-    foundSkills.add('Problem Solving')
-    foundSkills.add('Communication')
-    foundSkills.add('Technical Fundamentals')
-    if (combined.includes('developer') || combined.includes('software') || combined.includes('code')) {
-      foundSkills.add('Software Development')
-      foundSkills.add('Git')
+  // 2. Experience Section Block Extraction
+  const experienceEntries = []
+  if (text) {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+    let inExp = false
+    let currentJob = null
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+
+      if (/^\s*(work experience|experience|employment|projects|professional history)[\s:]*$/i.test(line)) {
+        inExp = true
+        continue
+      } else if (inExp && /^\s*(education|skills|certifications|references)[\s:]*$/i.test(line)) {
+        inExp = false
+        if (currentJob) { experienceEntries.push(currentJob); currentJob = null }
+      }
+
+      if (inExp) {
+        const jobHeaderMatch = line.match(/^([A-Za-z\s]+)\s*[,@|]\s*([A-Za-z0-9\s,&]+)$/)
+        const dateMatch = line.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December|\d{4})\s*[-–to]+\s*(Present|Current|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December|\d{4})\b/i)
+
+        if (jobHeaderMatch && !dateMatch) {
+          if (currentJob) experienceEntries.push(currentJob)
+          currentJob = {
+            title: jobHeaderMatch[1].trim(),
+            company: jobHeaderMatch[2].trim(),
+            startYear: null,
+            endYear: null,
+            description: ''
+          }
+        } else if (dateMatch && currentJob) {
+          const yearMatches = line.match(/\b(19\d\d|20\d\d)\b/g)
+          if (yearMatches) {
+            currentJob.startYear = parseInt(yearMatches[0], 10)
+            currentJob.endYear = yearMatches[1] ? parseInt(yearMatches[1], 10) : 2026
+          }
+        } else if ((line.startsWith('•') || line.startsWith('*') || line.startsWith('-')) && currentJob) {
+          const bullet = line.replace(/^[•*\-\s]+/, '')
+          if (currentJob.description) {
+            currentJob.description += ' ' + bullet
+          } else {
+            currentJob.description = bullet
+          }
+        }
+      }
     }
+    if (currentJob) experienceEntries.push(currentJob)
   }
 
   const skillsList = Array.from(foundSkills)
   const result = {
     skills: skillsList,
-    education: [
-      {
-        school: 'Extracted Education',
-        degree: 'Bachelor Degree / Technical Qualification',
-        startYear: 2020,
-        endYear: 2024
-      }
-    ],
-    experience: [
-      {
-        company: 'Projects & Experience',
-        title: 'Developer / Specialist',
-        startYear: 2022,
-        endYear: 2024,
-        description: 'Demonstrated competence in core technical concepts and project execution.'
-      }
-    ],
-    certifications: ['Verified Technical Skills']
+    education: educationEntries,
+    experience: experienceEntries,
+    certifications: []
   }
 
   return {

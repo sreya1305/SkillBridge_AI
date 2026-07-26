@@ -278,8 +278,34 @@ export default function ResumeParserPage() {
             const certifications = Array.isArray(data.certifications) ? data.certifications : []
 
             const saveSkillsAndNavigate = (targetPath) => {
-              if (typeof window !== 'undefined' && skills.length > 0) {
-                window.localStorage.setItem('userSkills', JSON.stringify(skills))
+              if (typeof window !== 'undefined') {
+                if (skills.length > 0) {
+                  window.localStorage.setItem('userSkills', JSON.stringify(skills))
+                }
+                if (education.length > 0) {
+                  const formattedEdu = education.map((e) => {
+                    const deg = e.degree || e.title || ''
+                    const sch = e.school || e.detail || ''
+                    const years = e.startYear && e.endYear ? ` (${e.startYear}-${e.endYear})` : ''
+                    return {
+                      title: deg || 'Education / Degree',
+                      detail: sch ? `at ${sch}${years}` : years
+                    }
+                  })
+                  window.localStorage.setItem('userEducation', JSON.stringify(formattedEdu))
+                }
+                if (experience.length > 0) {
+                  const formattedExp = experience.map((e) => {
+                    const roleTitle = e.title || e.role || ''
+                    const companyName = e.company || e.detail || ''
+                    const desc = e.description && e.description !== roleTitle ? ` - ${e.description}` : ''
+                    return {
+                      title: roleTitle || 'Experience / Role',
+                      detail: companyName ? `at ${companyName}${desc}` : desc
+                    }
+                  })
+                  window.localStorage.setItem('userExperience', JSON.stringify(formattedExp))
+                }
               }
               window.location.href = targetPath
             }
