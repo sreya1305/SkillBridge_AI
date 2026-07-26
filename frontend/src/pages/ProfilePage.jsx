@@ -26,9 +26,7 @@ export default function ProfilePage() {
   const [allRoles] = useState(() => getAllRoles())
   const [selectedRoleId, setSelectedRoleId] = useState(() => {
     if (typeof window === 'undefined') return ''
-    window.localStorage.removeItem('userSkills')
-    window.localStorage.removeItem('targetRoleId')
-    return ''
+    return window.localStorage.getItem('targetRoleId') || ''
   })
   const [resumeName, setResumeName] = useState('')
   const [notice, setNotice] = useState('')
@@ -50,16 +48,14 @@ export default function ProfilePage() {
   }
   const addKeyHandlers = (callback, targetRef, direction) => (event) => { onEnter(callback)(event); onArrow(targetRef, direction)(event) }
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.removeItem('userSkills')
-    window.localStorage.removeItem('targetRoleId')
-  }, [])
-
   const handleContinue = () => {
     if (!selectedRoleId) {
       setNotice('Please select a target role before continuing.')
       return
+    }
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('userSkills', JSON.stringify(skills.map((s) => s.name)))
+      window.localStorage.setItem('targetRoleId', selectedRoleId)
     }
     window.location.href = '/skill-gap'
   }

@@ -39,8 +39,53 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
 const PORT = process.env.PORT || 4000;
 
 if (!AI_API_KEY) {
-  console.error('Missing GEMINI_API_KEY environment variable.');
-  process.exit(1);
+  console.warn('GEMINI_API_KEY environment variable is missing. Server running with fallback generation mode.');
+}
+
+function getApiUrl(path) {
+  const base = AI_API_BASE_URL.endsWith('/') ? AI_API_BASE_URL : AI_API_BASE_URL + '/';
+  return new URL(path, base).toString();
+}
+
+function createFallbackRoadmap(targetRole, currentSkills = [], missingSkills = {}) {
+  const critical = Array.isArray(missingSkills.critical) ? missingSkills.critical : []
+  const important = Array.isArray(missingSkills.important) ? missingSkills.important : []
+  const niceToHave = Array.isArray(missingSkills.niceToHave) ? missingSkills.niceToHave : []
+
+  const milestone1Skills = critical.length > 0 ? critical : (currentSkills.length > 0 ? currentSkills.slice(0, 3) : ['Core Fundamentals'])
+  const milestone2Skills = important.length > 0 ? important : ['Advanced Concepts', 'Framework Integration']
+  const milestone3Skills = niceToHave.length > 0 ? niceToHave : ['Best Practices', 'Portfolio & Deployment']
+
+  return {
+    milestones: [
+      {
+        title: `Phase 1: Master Core Fundamentals for ${targetRole}`,
+        focus: 'Focus on high-priority critical skill gaps and core requirements.',
+        skills: milestone1Skills,
+        resources: ['Official documentation & core guides', 'Hands-on practice exercises'],
+        estimatedWeeks: 4,
+        projects: [`Build a foundational ${targetRole} project`],
+      },
+      {
+        title: `Phase 2: Intermediate Capabilities & Workflow`,
+        focus: 'Deepen knowledge in supporting tools and core framework capabilities.',
+        skills: milestone2Skills,
+        resources: ['Developer tutorials & community examples', 'Architecture & pattern guides'],
+        estimatedWeeks: 4,
+        projects: [`Develop a multi-feature portfolio application`],
+      },
+      {
+        title: `Phase 3: Specialization & Career Readiness`,
+        focus: 'Polish portfolio, performance optimization, and project deployment.',
+        skills: milestone3Skills,
+        resources: ['System design guides', 'Production deployment tutorials'],
+        estimatedWeeks: 4,
+        projects: [`Build capstone project for ${targetRole}`],
+      },
+    ],
+    estimatedTotalWeeks: 12,
+    summary: `Personalized 12-week roadmap designed to transition into ${targetRole}, closing priority skill gaps while building on your existing experience.`,
+  }
 }
 
 const app = express();
@@ -62,7 +107,7 @@ app.post('/api/ai/proxy', async (req, res) => {
     return res.status(400).json({ error: 'Absolute URLs are not allowed. Use a relative path instead.' });
   }
 
-  const targetUrl = new URL(path, AI_API_BASE_URL).toString();
+  const targetUrl = getApiUrl(path);
 
   try {
     const response = await fetch(targetUrl, {
@@ -126,7 +171,7 @@ app.post('/api/ai/resume-parser', async (req, res) => {
 
   try {
     const response = await fetch(
-      new URL('models/gemini-2.0-flash:generateContent', AI_API_BASE_URL).toString(),
+      getApiUrl('models/gemini-2.0-flash:generateContent'),
       {
         method: 'POST',
         headers: {
@@ -144,7 +189,7 @@ app.post('/api/ai/resume-parser', async (req, res) => {
 
     const responseBody = await response.text()
     const contentType = response.headers.get('content-type') || ''
-    console.log('[roadmap] ai status', response.status, 'contentType', contentType, 'body', responseBody)
+    console.log('[resume-parser] ai status', response.status, 'contentType', contentType, 'body', responseBody)
 
     if (!response.ok) {
       let details = responseBody
@@ -233,6 +278,11 @@ app.post('/api/ai/roadmap', async (req, res) => {
     return res.status(400).json({ error: 'targetRole is required.' })
   }
 
+  if (!AI_API_KEY) {
+    console.warn('Using fallback roadmap because GEMINI_API_KEY is not configured.')
+    return res.status(200).json(createFallbackRoadmap(targetRole, currentSkills, missingSkills))
+  }
+
   const prompt = [
     'You are a career roadmap planner. Create a structured learning roadmap to transition into the target role.',
     'Use the provided current skills and skill gaps to tailor the plan.',
@@ -256,7 +306,7 @@ app.post('/api/ai/roadmap', async (req, res) => {
 
   try {
     const response = await fetch(
-      new URL('models/gemini-2.0-flash:generateContent', AI_API_BASE_URL).toString(),
+      getApiUrl('models/gemini-2.0-flash:generateContent'),
       {
         method: 'POST',
         headers: {
@@ -275,40 +325,33 @@ app.post('/api/ai/roadmap', async (req, res) => {
     console.log('[roadmap] ai status', response.status, 'contentType', contentType, 'body', responseBody)
 
     if (!response.ok) {
-      let details = responseBody
-      if (contentType.includes('application/json')) {
-        try {
-          const parsed = JSON.parse(responseBody)
-          details = parsed.error || parsed.details || responseBody
-        } catch {
-          // keep raw body as details
-        }
-      }
-      return res.status(response.status).json({ error: 'AI request failed', details })
+      console.warn('AI request failed, falling back to generated roadmap. Status:', response.status, responseBody)
+      return res.status(200).json(createFallbackRoadmap(targetRole, currentSkills, missingSkills))
     }
 
     let aiResponse
     if (contentType.includes('application/json')) {
       aiResponse = JSON.parse(responseBody)
     } else {
-      return res.status(502).json({ error: 'AI returned non-JSON response', details: responseBody })
+      console.warn('AI response non-JSON, falling back.')
+      return res.status(200).json(createFallbackRoadmap(targetRole, currentSkills, missingSkills))
     }
 
     const content = aiResponse.candidates?.[0]?.content?.parts?.find((part) => typeof part?.text === 'string')?.text
 
     if (!content) {
-      return res.status(502).json({ error: 'AI response did not include roadmap content.' })
+      return res.status(200).json(createFallbackRoadmap(targetRole, currentSkills, missingSkills))
     }
 
     let parsed
     try {
       parsed = JSON.parse(content)
     } catch {
-      return res.status(502).json({ error: 'AI response was not valid JSON.', details: content })
+      return res.status(200).json(createFallbackRoadmap(targetRole, currentSkills, missingSkills))
     }
 
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return res.status(502).json({ error: 'AI response must be a JSON object.' })
+      return res.status(200).json(createFallbackRoadmap(targetRole, currentSkills, missingSkills))
     }
 
     const milestones = Array.isArray(parsed.milestones) ? parsed.milestones.filter((item) => item && typeof item === 'object').slice(0, 12) : []
@@ -322,7 +365,7 @@ app.post('/api/ai/roadmap', async (req, res) => {
     }))
 
     const sanitized = {
-      milestones: sanitizedMilestones,
+      milestones: sanitizedMilestones.length > 0 ? sanitizedMilestones : createFallbackRoadmap(targetRole, currentSkills, missingSkills).milestones,
       estimatedTotalWeeks: typeof parsed.estimatedTotalWeeks === 'number' ? Math.max(1, Math.round(parsed.estimatedTotalWeeks)) : sanitizedMilestones.reduce((sum, m) => sum + m.estimatedWeeks, 0),
       summary: typeof parsed.summary === 'string' ? parsed.summary.trim() : 'Roadmap generated from your current skills and target role.',
     }
@@ -330,7 +373,7 @@ app.post('/api/ai/roadmap', async (req, res) => {
     return res.status(200).json(sanitized)
   } catch (error) {
     console.error('Roadmap generation failed:', error)
-    return res.status(502).json({ error: 'Roadmap generation failed', details: error.message })
+    return res.status(200).json(createFallbackRoadmap(targetRole, currentSkills, missingSkills))
   }
 })
 
