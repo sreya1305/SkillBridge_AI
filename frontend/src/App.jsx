@@ -45,7 +45,9 @@ function HeroFlow() {
 }
 
 export default function App() {
-  const path = window.location.pathname
+  const rawPath = typeof window !== 'undefined' ? window.location.pathname : '/'
+  const path = rawPath.replace(/\/+$/, '') || '/'
+
   if (path === '/profile') return <ProfilePage />
   if (path === '/target-role') return <TargetRolePage />
   if (path === '/skill-gap') return <SkillGapPage />

@@ -40,7 +40,7 @@ export default function ProfilePage() {
   })
   const [educationForm, setEducationForm] = useState({ degree: '', school: '' })
   const [experienceForm, setExperienceForm] = useState({ role: '', company: '' })
-  const [allRoles] = useState(() => getAllRoles())
+  const [allRoles, setAllRoles] = useState(() => getAllRoles())
   const [selectedRoleId, setSelectedRoleId] = useState(() => {
     if (typeof window === 'undefined') return ''
     return window.localStorage.getItem('targetRoleId') || ''
@@ -67,12 +67,18 @@ export default function ProfilePage() {
   const addKeyHandlers = (callback, targetRef, direction) => (event) => { onEnter(callback)(event); onArrow(targetRef, direction)(event) }
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash === '#target-role') {
-      const el = document.getElementById('target-role')
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }, 150)
+    if (typeof window !== 'undefined') {
+      setAllRoles(getAllRoles())
+      const storedRoleId = window.localStorage.getItem('targetRoleId') || ''
+      setSelectedRoleId(storedRoleId)
+
+      if (window.location.hash === '#target-role') {
+        const el = document.getElementById('target-role')
+        if (el) {
+          setTimeout(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }, 150)
+        }
       }
     }
   }, [])
