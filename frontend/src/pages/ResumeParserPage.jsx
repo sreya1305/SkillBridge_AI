@@ -279,32 +279,60 @@ export default function ResumeParserPage() {
 
             const saveSkillsAndNavigate = (targetPath) => {
               if (typeof window !== 'undefined') {
-                if (skills.length > 0) {
-                  window.localStorage.setItem('userSkills', JSON.stringify(skills))
+                // 1. Merge Skills (Union of existing manual + new extracted skills)
+                let existingSkills = []
+                try {
+                  const stored = JSON.parse(window.localStorage.getItem('userSkills') || '[]')
+                  existingSkills = Array.isArray(stored) ? stored.map(s => typeof s === 'string' ? s : s.name).filter(Boolean) : []
+                } catch {}
+
+                const mergedSkills = Array.from(new Set([...existingSkills, ...skills]))
+                if (mergedSkills.length > 0) {
+                  window.localStorage.setItem('userSkills', JSON.stringify(mergedSkills))
                 }
-                if (education.length > 0) {
-                  const formattedEdu = education.map((e) => {
-                    const deg = e.degree || e.title || ''
-                    const sch = e.school || e.detail || ''
-                    const years = e.startYear && e.endYear ? ` (${e.startYear}-${e.endYear})` : ''
-                    return {
-                      title: deg || 'Education / Degree',
-                      detail: sch ? `at ${sch}${years}` : years
-                    }
-                  })
-                  window.localStorage.setItem('userEducation', JSON.stringify(formattedEdu))
+
+                // 2. Merge Education
+                let existingEdu = []
+                try {
+                  const storedEdu = JSON.parse(window.localStorage.getItem('userEducation') || '[]')
+                  existingEdu = Array.isArray(storedEdu) ? storedEdu : []
+                } catch {}
+
+                const formattedEdu = education.map((e) => {
+                  const deg = e.degree || e.title || ''
+                  const sch = e.school || e.detail || ''
+                  const years = e.startYear && e.endYear ? ` (${e.startYear}-${e.endYear})` : ''
+                  return {
+                    title: deg || 'Education / Degree',
+                    detail: sch ? `at ${sch}${years}` : years
+                  }
+                })
+
+                const mergedEdu = [...existingEdu, ...formattedEdu]
+                if (mergedEdu.length > 0) {
+                  window.localStorage.setItem('userEducation', JSON.stringify(mergedEdu))
                 }
-                if (experience.length > 0) {
-                  const formattedExp = experience.map((e) => {
-                    const roleTitle = e.title || e.role || ''
-                    const companyName = e.company || e.detail || ''
-                    const desc = e.description && e.description !== roleTitle ? ` - ${e.description}` : ''
-                    return {
-                      title: roleTitle || 'Experience / Role',
-                      detail: companyName ? `at ${companyName}${desc}` : desc
-                    }
-                  })
-                  window.localStorage.setItem('userExperience', JSON.stringify(formattedExp))
+
+                // 3. Merge Experience
+                let existingExp = []
+                try {
+                  const storedExp = JSON.parse(window.localStorage.getItem('userExperience') || '[]')
+                  existingExp = Array.isArray(storedExp) ? storedExp : []
+                } catch {}
+
+                const formattedExp = experience.map((e) => {
+                  const roleTitle = e.title || e.role || ''
+                  const companyName = e.company || e.detail || ''
+                  const desc = e.description && e.description !== roleTitle ? ` - ${e.description}` : ''
+                  return {
+                    title: roleTitle || 'Experience / Role',
+                    detail: companyName ? `at ${companyName}${desc}` : desc
+                  }
+                })
+
+                const mergedExp = [...existingExp, ...formattedExp]
+                if (mergedExp.length > 0) {
+                  window.localStorage.setItem('userExperience', JSON.stringify(mergedExp))
                 }
               }
               window.location.href = targetPath
