@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import { getSkillGapAnalysis } from '../lib/skillGap'
 import { getSelectedRole } from '../lib/roleStorage'
@@ -210,9 +210,55 @@ export default function RoadmapPage() {
   const selectedRole = typeof window !== 'undefined' ? getSelectedRole() : null
   const skillGap = typeof window !== 'undefined' ? getSkillGapAnalysis(rawSkills, selectedRole?.skills) : { matched: { critical: [], important: [], niceToHave: [] }, missing: { critical: [], important: [], niceToHave: [] }, matchedSkills: [], totalRequiredSkills: 0, matchedSkillCount: 0, matchPercentage: 0 }
 
+  const roleKey = selectedRole?.id || targetRoleId || 'default'
+  const roadmapStorageKey = `saved_roadmap_${roleKey}`
+  const progressStorageKey = `roadmap_progress_${roleKey}`
+
   const [loading, setLoading] = useState(false)
   const [roadmap, setRoadmap] = useState(null)
   const [error, setError] = useState('')
+  const [completedItems, setCompletedItems] = useState({})
+
+  // Load saved roadmap & progress from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedRoadmapRaw = window.localStorage.getItem(roadmapStorageKey)
+      if (savedRoadmapRaw) {
+        try {
+          setRoadmap(JSON.parse(savedRoadmapRaw))
+        } catch {
+          // ignore parsing error
+        }
+      }
+
+      const savedProgressRaw = window.localStorage.getItem(progressStorageKey)
+      if (savedProgressRaw) {
+        try {
+          setCompletedItems(JSON.parse(savedProgressRaw))
+        } catch {
+          // ignore parsing error
+        }
+      }
+    }
+  }, [roadmapStorageKey, progressStorageKey])
+
+  // Save progress changes to localStorage
+  const toggleItem = (itemId) => {
+    setCompletedItems((prev) => {
+      const updated = { ...prev, [itemId]: !prev[itemId] }
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(progressStorageKey, JSON.stringify(updated))
+      }
+      return updated
+    })
+  }
+
+  const handleResetProgress = () => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(progressStorageKey)
+    }
+    setCompletedItems({})
+  }
 
   const handleGenerate = async () => {
     setLoading(true)
@@ -226,6 +272,9 @@ export default function RoadmapPage() {
         matchedSkills: skillGap.matchedSkills,
       })
       setRoadmap(result)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(roadmapStorageKey, JSON.stringify(result))
+      }
     } catch (err) {
       setError(err.message || 'Failed to generate roadmap')
     } finally {
@@ -233,6 +282,57 @@ export default function RoadmapPage() {
     }
   }
 
+  // Calculate trackable items & completion metrics
+  const getTrackableItems = () => {
+    if (!roadmap?.milestones) return { total: 0, completed: 0, percent: 0, phaseStats: [] }
+
+    let total = 0
+    let completed = 0
+    const phaseStats = []
+
+    roadmap.milestones.forEach((milestone, mIdx) => {
+      let pTotal = 0
+      let pCompleted = 0
+
+      // Learning Steps
+      const steps = milestone.learningSteps || []
+      steps.forEach((_, stIdx) => {
+        const id = `m${mIdx}_step_${stIdx}`
+        pTotal++
+        if (completedItems[id]) pCompleted++
+      })
+
+      // Per-skill breakdown
+      const resolvedBreakdown = resolveSkillBreakdown(milestone)
+      resolvedBreakdown.forEach((_, sbIdx) => {
+        const id = `m${mIdx}_skill_${sbIdx}`
+        pTotal++
+        if (completedItems[id]) pCompleted++
+      })
+
+      // Capstone project
+      if (milestone.project?.title) {
+        const id = `m${mIdx}_project`
+        pTotal++
+        if (completedItems[id]) pCompleted++
+      }
+
+      total += pTotal
+      completed += pCompleted
+
+      phaseStats.push({
+        title: milestone.title,
+        isFinished: pTotal > 0 && pCompleted === pTotal,
+        completed: pCompleted,
+        total: pTotal
+      })
+    })
+
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0
+    return { total, completed, percent, phaseStats }
+  }
+
+  const metrics = getTrackableItems()
   const roleTitle = roadmap?.role || selectedRole?.title || 'Target Role'
   const summaryText = roadmap?.personalizedSummary || roadmap?.summary || 'Tailored learning roadmap created for your target role.'
   const totalDuration = roadmap?.totalEstimatedDuration || (roadmap?.estimatedTotalWeeks ? `${roadmap.estimatedTotalWeeks} weeks` : '12 weeks')
@@ -247,6 +347,7 @@ export default function RoadmapPage() {
       </div>
       <section className="wrap pb-16">
         <div className="mx-auto max-w-5xl space-y-8">
+          {/* Header & Generator Card */}
           <div className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-10 shadow-sm">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -255,7 +356,7 @@ export default function RoadmapPage() {
                   Personalized Learning Path
                 </h1>
                 <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-                  Step-by-step actionable guide customized for your transition into <span className="font-bold text-ink">{roleTitle}</span>. Features explicit subtopics, verified learning resources, practical tasks, and capstone projects.
+                  Step-by-step actionable guide customized for your transition into <span className="font-bold text-ink">{roleTitle}</span>. Track your real-time progress across skills, learning steps, and capstone projects.
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
                   Target Role: <span className="font-semibold text-ink">{selectedRole?.title || 'None selected'}</span>
@@ -267,7 +368,7 @@ export default function RoadmapPage() {
                   disabled={loading || !selectedRole}
                   className="rounded-full bg-violet px-6 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-violet/90 disabled:opacity-60 transition-all"
                 >
-                  {loading ? 'Generating Mentor Plan...' : 'Generate Roadmap'}
+                  {loading ? 'Generating Mentor Plan...' : (roadmap ? 'Regenerate Roadmap' : 'Generate Roadmap')}
                 </button>
                 {!selectedRole && <p className="mt-2 text-xs text-slate-500">Select a target role in your profile first.</p>}
               </div>
@@ -278,6 +379,89 @@ export default function RoadmapPage() {
 
           {roadmap && (
             <div className="space-y-6">
+              {/* Interactive Progress Tracking Header Card */}
+              <section className="rounded-3xl border border-violet-200/80 bg-gradient-to-br from-violet-50/60 via-white to-indigo-50/40 p-6 sm:p-8 text-slate-800 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-violet-100 pb-5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700 border border-violet-200">
+                        ⚡ Real-Time Local Progress
+                      </span>
+                      {metrics.percent === 100 && (
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+                          🏆 100% Completed!
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="text-2xl font-extrabold text-ink mt-2 tracking-tight">Your Career Roadmap Progress</h2>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Check off completed learning steps, skill masterclasses, and capstone projects. Saved automatically on this browser.
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-3">
+                    <div className="text-right">
+                      <span className={`text-3xl font-black ${metrics.percent === 100 ? 'text-emerald-600' : 'text-violet-600'}`}>
+                        {metrics.percent}%
+                      </span>
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Overall Completion</p>
+                    </div>
+                    {metrics.completed > 0 && (
+                      <button
+                        onClick={handleResetProgress}
+                        className="rounded-xl bg-slate-100 border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 hover:text-ink transition-all"
+                        title="Reset checked progress items"
+                      >
+                        🔄 Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Animated Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>Progress Tracker</span>
+                    <span>{metrics.completed} of {metrics.total} items completed</span>
+                  </div>
+                  <div className="h-4 w-full rounded-full bg-slate-200/80 p-0.5 overflow-hidden border border-slate-300/60 shadow-inner">
+                    <div
+                      className="h-full rounded-full transition-all duration-500 ease-out"
+                      style={{
+                        width: `${metrics.percent}%`,
+                        background: metrics.percent === 100
+                          ? 'linear-gradient(90deg, #10b981, #059669)'
+                          : 'linear-gradient(90deg, #6366f1, #8b5cf6, #10b981)'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Phase Completion Badges */}
+                {metrics.phaseStats.length > 0 && (
+                  <div className="grid gap-3 sm:grid-cols-3 pt-2">
+                    {metrics.phaseStats.map((ps, pIdx) => (
+                      <div
+                        key={pIdx}
+                        className={`rounded-2xl p-3 text-xs border transition-all ${
+                          ps.isFinished
+                            ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950 font-semibold'
+                            : 'bg-white/80 border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-bold">
+                          <span className="truncate">Phase {pIdx + 1}</span>
+                          <span className={ps.isFinished ? 'text-emerald-700 font-extrabold' : 'text-slate-600'}>
+                            {ps.isFinished ? '✅ Complete' : `${ps.completed}/${ps.total}`}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate mt-0.5">{ps.title}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
               {/* Overall Summary Card */}
               <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -300,6 +484,9 @@ export default function RoadmapPage() {
                     const project = milestone.project
                     const skills = milestone.skillsCovered || milestone.skills || []
                     const resolvedBreakdown = resolveSkillBreakdown(milestone)
+
+                    const projId = `m${mIdx}_project`
+                    const isProjDone = !!completedItems[projId]
 
                     return (
                       <div key={mIdx} className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
@@ -337,16 +524,35 @@ export default function RoadmapPage() {
                             </h4>
                             <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
                               {steps.map((step, stIdx) => {
+                                const stepId = `m${mIdx}_step_${stIdx}`
+                                const isDone = !!completedItems[stepId]
                                 const res = step.resource || {}
                                 const subtopics = step.subtopics || []
                                 const criteria = step.completionCriteria || []
 
                                 return (
-                                  <div key={stIdx} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 space-y-4 shadow-xs hover:border-slate-300 transition-colors">
-                                    {/* Topic Title & Why Learn */}
+                                  <div
+                                    key={stIdx}
+                                    className={`rounded-2xl border p-5 space-y-4 shadow-xs transition-all ${
+                                      isDone
+                                        ? 'border-emerald-300 bg-emerald-50/40 opacity-90'
+                                        : 'border-slate-200 bg-slate-50/80 hover:border-slate-300'
+                                    }`}
+                                  >
+                                    {/* Topic Title & Checkbox */}
                                     <div>
-                                      <div className="flex items-start justify-between gap-2">
-                                        <h5 className="font-bold text-ink text-sm sm:text-base">{step.topic}</h5>
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-center gap-2.5">
+                                          <input
+                                            type="checkbox"
+                                            checked={isDone}
+                                            onChange={() => toggleItem(stepId)}
+                                            className="h-4 w-4 rounded border-slate-300 text-violet focus:ring-violet cursor-pointer"
+                                          />
+                                          <h5 className={`font-bold text-sm sm:text-base ${isDone ? 'line-through text-slate-500' : 'text-ink'}`}>
+                                            {step.topic}
+                                          </h5>
+                                        </div>
                                         {step.estimatedStudyTime && (
                                           <span className="shrink-0 rounded-full bg-slate-200/70 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
                                             ⏳ {step.estimatedStudyTime}
@@ -354,7 +560,7 @@ export default function RoadmapPage() {
                                         )}
                                       </div>
                                       {step.whyLearnThis && (
-                                        <p className="mt-1 text-xs text-slate-600 leading-relaxed">{step.whyLearnThis}</p>
+                                        <p className="mt-1 text-xs text-slate-600 leading-relaxed pl-6.5">{step.whyLearnThis}</p>
                                       )}
                                     </div>
 
@@ -431,72 +637,110 @@ export default function RoadmapPage() {
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-                              {resolvedBreakdown.map((sb, sbIdx) => (
-                                <div key={sbIdx} className="rounded-2xl border border-violet/20 bg-gradient-to-b from-violet-50/30 to-white p-5 space-y-4 shadow-xs">
-                                  <div className="flex items-center justify-between border-b border-violet/10 pb-2.5">
-                                    <h5 className="font-extrabold text-ink text-base">🎯 {sb.skill}</h5>
-                                    <span className="rounded-full bg-violet/10 px-2.5 py-0.5 text-[10px] font-bold text-violet">
-                                      Skill Masterclass
-                                    </span>
-                                  </div>
+                              {resolvedBreakdown.map((sb, sbIdx) => {
+                                const skillId = `m${mIdx}_skill_${sbIdx}`
+                                const isSkillDone = !!completedItems[skillId]
 
-                                  {/* How to Develop Step-by-Step */}
-                                  {sb.howToDevelop?.length > 0 && (
-                                    <div className="space-y-1.5">
-                                      <p className="text-xs font-bold text-slate-800">🚀 How & Where to Study Step-by-Step:</p>
-                                      <ul className="list-disc pl-4 space-y-1 text-xs text-slate-700">
-                                        {sb.howToDevelop.map((step, stIdx) => (
-                                          <li key={stIdx} className="leading-relaxed">{step}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-
-                                  {/* Direct Platform Links */}
-                                  {sb.platformResources?.length > 0 && (
-                                    <div className="space-y-1.5 pt-1">
-                                      <p className="text-xs font-bold text-slate-800">🔗 Recommended Platforms & Direct Study Links:</p>
-                                      <div className="flex flex-wrap gap-2 pt-0.5">
-                                        {sb.platformResources.map((res, rIdx) => (
-                                          <a
-                                            key={rIdx}
-                                            href={res.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 rounded-xl border border-violet/30 bg-white px-3 py-1.5 text-xs font-bold text-violet hover:bg-violet-600 hover:text-white transition-all shadow-xs"
-                                          >
-                                            <span>{res.name}</span>
-                                            <span className="text-[10px]">↗</span>
-                                          </a>
-                                        ))}
+                                return (
+                                  <div
+                                    key={sbIdx}
+                                    className={`rounded-2xl border p-5 space-y-4 shadow-xs transition-all ${
+                                      isSkillDone
+                                        ? 'border-emerald-300 bg-emerald-50/40 opacity-90'
+                                        : 'border-violet/20 bg-gradient-to-b from-violet-50/30 to-white'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between border-b border-violet/10 pb-2.5">
+                                      <div className="flex items-center gap-2.5">
+                                        <input
+                                          type="checkbox"
+                                          checked={isSkillDone}
+                                          onChange={() => toggleItem(skillId)}
+                                          className="h-4 w-4 rounded border-slate-300 text-violet focus:ring-violet cursor-pointer"
+                                        />
+                                        <h5 className={`font-extrabold text-base ${isSkillDone ? 'line-through text-slate-500' : 'text-ink'}`}>
+                                          🎯 {sb.skill}
+                                        </h5>
                                       </div>
+                                      <span className="rounded-full bg-violet/10 px-2.5 py-0.5 text-[10px] font-bold text-violet">
+                                        {isSkillDone ? '✅ Mastered' : 'Skill Masterclass'}
+                                      </span>
                                     </div>
-                                  )}
 
-                                  {/* Actionable Task */}
-                                  {sb.actionableTask && (
-                                    <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950 space-y-1">
-                                      <p className="font-bold">⚡ Hands-on Skill Task:</p>
-                                      <p className="text-amber-900 leading-relaxed">{sb.actionableTask}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                                    {/* How to Develop Step-by-Step */}
+                                    {sb.howToDevelop?.length > 0 && (
+                                      <div className="space-y-1.5 pl-6.5">
+                                        <p className="text-xs font-bold text-slate-800">🚀 How & Where to Study Step-by-Step:</p>
+                                        <ul className="list-disc pl-4 space-y-1 text-xs text-slate-700">
+                                          {sb.howToDevelop.map((step, stIdx) => (
+                                            <li key={stIdx} className="leading-relaxed">{step}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+
+                                    {/* Direct Platform Links */}
+                                    {sb.platformResources?.length > 0 && (
+                                      <div className="space-y-1.5 pt-1 pl-6.5">
+                                        <p className="text-xs font-bold text-slate-800">🔗 Recommended Platforms & Direct Study Links:</p>
+                                        <div className="flex flex-wrap gap-2 pt-0.5">
+                                          {sb.platformResources.map((res, rIdx) => (
+                                            <a
+                                              key={rIdx}
+                                              href={res.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1.5 rounded-xl border border-violet/30 bg-white px-3 py-1.5 text-xs font-bold text-violet hover:bg-violet-600 hover:text-white transition-all shadow-xs"
+                                            >
+                                              <span>{res.name}</span>
+                                              <span className="text-[10px]">↗</span>
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Actionable Task */}
+                                    {sb.actionableTask && (
+                                      <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950 space-y-1">
+                                        <p className="font-bold">⚡ Hands-on Skill Task:</p>
+                                        <p className="text-amber-900 leading-relaxed">{sb.actionableTask}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })}
                             </div>
                           </div>
                         )}
 
                         {/* Milestone Capstone Project */}
                         {project && project.title && (
-                          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 space-y-3">
+                          <div
+                            className={`rounded-2xl border p-5 space-y-3 transition-all ${
+                              isProjDone
+                                ? 'border-emerald-400 bg-emerald-100/50'
+                                : 'border-emerald-200 bg-emerald-50/50'
+                            }`}
+                          >
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-100 pb-2.5">
-                              <div>
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
-                                  🏆 Milestone Capstone Project
-                                </span>
-                                <h4 className="text-base font-bold text-emerald-950 mt-0.5">{project.title}</h4>
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={isProjDone}
+                                  onChange={() => toggleItem(projId)}
+                                  className="h-5 w-5 rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                />
+                                <div>
+                                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                                    🏆 Milestone Capstone Project {isProjDone ? '(Completed ✅)' : ''}
+                                  </span>
+                                  <h4 className={`text-base font-bold text-emerald-950 mt-0.5 ${isProjDone ? 'line-through text-emerald-700' : ''}`}>
+                                    {project.title}
+                                  </h4>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 pl-8 sm:pl-0">
                                 {project.difficulty && (
                                   <span className="rounded-full bg-emerald-100 border border-emerald-200 px-3 py-0.5 text-xs font-bold text-emerald-800">
                                     {project.difficulty}
@@ -510,10 +754,10 @@ export default function RoadmapPage() {
                               </div>
                             </div>
 
-                            <p className="text-xs text-emerald-900 leading-relaxed">{project.description}</p>
+                            <p className="text-xs text-emerald-900 leading-relaxed pl-8 sm:pl-0">{project.description}</p>
 
                             {project.skillsDemonstrated?.length > 0 && (
-                              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                              <div className="flex flex-wrap items-center gap-1.5 text-xs pl-8 sm:pl-0">
                                 <span className="font-semibold text-emerald-950">Skills Demonstrated:</span>
                                 {project.skillsDemonstrated.map((sd, sdIdx) => (
                                   <span key={sdIdx} className="rounded bg-emerald-100/80 px-2 py-0.5 text-[11px] font-medium text-emerald-900">
@@ -524,7 +768,7 @@ export default function RoadmapPage() {
                             )}
 
                             {project.completionCriteria?.length > 0 && (
-                              <div className="text-xs text-emerald-900 pt-1">
+                              <div className="text-xs text-emerald-900 pt-1 pl-8 sm:pl-0">
                                 <span className="font-bold text-emerald-950">Project Criteria:</span>
                                 <ul className="list-disc pl-4 text-emerald-900 space-y-0.5 mt-0.5">
                                   {project.completionCriteria.map((pc, pcIdx) => (
