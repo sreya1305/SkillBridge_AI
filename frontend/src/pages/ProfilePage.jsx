@@ -291,7 +291,7 @@ export default function ProfilePage() {
                   </option>
                   {allRoles.map((role) => (
                     <option key={role.id} value={role.id} className="bg-[#0e1a34] text-white py-1">
-                      {role.title} ({role.requiredSkills?.length || 0} required skills)
+                      {role.title}
                     </option>
                   ))}
                 </select>
