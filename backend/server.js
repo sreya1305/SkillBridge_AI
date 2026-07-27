@@ -7,6 +7,7 @@ import Tesseract from 'tesseract.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { verifySkillsAgainstText } from './skillsDictionary.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -410,187 +411,43 @@ function fallbackParseResumeText(text = '', fileName = '') {
   if (!combinedText.trim()) {
     return {
       success: true,
-      data: { skills: [], education: [], experience: [], certifications: [] },
-      skills: [], education: [], experience: [], certifications: []
+      data: { skills: [], technicalSkills: [], softSkills: [], verifiedSkills: [], education: [], experience: [], certifications: [] },
+      skills: [], technicalSkills: [], softSkills: [], verifiedSkills: [], education: [], experience: [], certifications: []
     }
   }
 
-  const padded = ' ' + combinedText.replace(/[\r\n\t]+/g, ' ') + ' '
-  const foundSkills = new Set()
-
-  const masterSkillsList = [
-    'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'PHP', 'Ruby', 'Golang', 'Go',
-    'Rust', 'Swift', 'Kotlin', 'MATLAB', 'HTML5', 'CSS3', 'HTML', 'CSS', 'SQL',
-    'React', 'React.js', 'React Native', 'Vue', 'Vue.js', 'Angular', 'Next.js', 'Nuxt.js', 'Svelte',
-    'Redux', 'Tailwind CSS', 'Bootstrap', 'Sass', 'SCSS', 'jQuery', 'Webpack', 'Vite', 'GraphQL',
-    'Node.js', 'Express.js', 'NestJS', 'Django', 'Flask', 'FastAPI', 'Spring Boot',
-    'Laravel', 'Ruby on Rails', 'Microservices', 'RESTful APIs', 'REST API',
-    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQLite', 'Oracle', 'SQL Server', 'Firebase',
-    'DynamoDB', 'Cassandra', 'Elasticsearch', 'Prisma', 'Sequelize',
-    'AWS', 'Amazon Web Services', 'Azure', 'GCP', 'Google Cloud Platform', 'Docker', 'Kubernetes',
-    'CI/CD', 'Jenkins', 'GitHub Actions', 'Terraform', 'Ansible', 'Nginx', 'Linux', 'Bash',
-    'Machine Learning', 'Deep Learning', 'Artificial Intelligence', 'Data Analysis', 'Data Science',
-    'Pandas', 'NumPy', 'Scikit-Learn', 'TensorFlow', 'PyTorch', 'Keras', 'OpenCV', 'NLP', 'LLMs',
-    'Power BI', 'Tableau', 'Matplotlib', 'Seaborn', 'Spark', 'Hadoop',
-    'Flutter', 'Android', 'iOS', 'Expo', 'SwiftUI',
-    'Git', 'GitHub', 'GitLab', 'Jira', 'Postman', 'Figma', 'Canva', 'Trello', 'VS Code',
-    'Data Structures', 'Algorithms', 'Object-Oriented Programming', 'System Design',
-    'Agile', 'Scrum', 'Unit Testing', 'TDD',
-    'Communication', 'Leadership', 'Problem Solving', 'Project Management'
-  ]
-
-  masterSkillsList.forEach((skill) => {
-    const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
-    const reg = new RegExp(`(?:^|[^a-zA-Z0-9+#.])${escaped}(?:$|[^a-zA-Z0-9+#.])`, 'i')
-    if (reg.test(padded)) {
-      foundSkills.add(skill)
-    }
-  })
-
-  // 1. Education Section Block Extraction
-  const educationEntries = []
-  if (text) {
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
-    let inEdu = false
-    let degree = ''
-    let school = ''
-    let startYear = null
-    let endYear = null
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-
-      if (/^\s*(education|academic|qualifications)[\s:]*$/i.test(line)) {
-        inEdu = true
-        continue
-      } else if (inEdu && /^\s*(skills|experience|work|projects|summary|references)[\s:]*$/i.test(line)) {
-        inEdu = false
-        break
-      }
-
-      if (inEdu || /Bachelor|Master|B\.?S|B\.?Tech|Degree|Diploma|University|College/i.test(line)) {
-        if (/Bachelor|Master|B\.?S|B\.?Tech|Degree|Diploma/i.test(line)) {
-          degree = line.replace(/^[•*\-\s]+/, '')
-        } else if (/University|College|Institute|School|Academy/i.test(line)) {
-          school = line.replace(/^[•*\-\s]+/, '')
-        }
-
-        const years = line.match(/\b(19\d\d|20\d\d)\s*[-–to]+\s*(19\d\d|20\d\d|present|current)\b/i)
-        if (years) {
-          startYear = parseInt(years[1], 10)
-          endYear = years[2].toLowerCase().includes('pres') ? 2026 : parseInt(years[2], 10)
-        }
-      }
-    }
-
-    if (degree || school) {
-      educationEntries.push({
-        school: school || 'University / Institution',
-        degree: degree || 'Degree / Qualification',
-        startYear: startYear || 2017,
-        endYear: endYear || 2021
-      })
-    }
-  }
-
-  // 2. Experience & Internship Section Block Extraction
-  const experienceEntries = []
-  if (text) {
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
-    let inExp = false
-    let currentJob = null
-
-    const expHeaderRegex = /^\s*(work experience|experience|employment|professional history|internship|internships|internship experience|projects & internships|career history|trainings & internships)[\s:]*$/i
-    const stopHeaderRegex = /^\s*(education|skills|certifications|references|academic background)[\s:]*$/i
-
-    const jobTitleKeywords = /developer|engineer|architect|intern|internship|manager|lead|consultant|designer|analyst|specialist|administrator|freelancer|founder|co-founder|director|associate|programmer|full stack|frontend|backend|web|software|data scientist|ui\/ux/i
-    const garbageKeywords = /nativewind|expo|page\s*\d|1 of|2 of|skills|tools|technologies|frameworks|libraries/i
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-
-      if (expHeaderRegex.test(line)) {
-        inExp = true
-        continue
-      } else if (inExp && stopHeaderRegex.test(line)) {
-        inExp = false
-        if (currentJob) { experienceEntries.push(currentJob); currentJob = null }
-      }
-
-      if (inExp) {
-        if (garbageKeywords.test(line)) continue
-
-        const dateMatch = line.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December|\d{4})\s*[-–to]+\s*(Present|Current|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December|\d{4})\b/i)
-
-        let company = ''
-        let title = ''
-
-        if (/\b(at|@)\b/i.test(line)) {
-          const parts = line.split(/\b(?:at|@)\b/i)
-          title = parts[0].trim()
-          company = parts.slice(1).join(' at ').trim()
-        } else {
-          const headerMatch = line.match(/^([A-Za-z0-9\s().+#-]+?)\s*[,|–-]\s*([A-Za-z0-9\s().+#-,&]+)$/)
-          if (headerMatch) {
-            title = headerMatch[1].trim()
-            company = headerMatch[2].trim()
-          } else if (jobTitleKeywords.test(line) && !dateMatch) {
-            title = line.trim()
-            company = ''
-          }
-        }
-
-        if (title && (jobTitleKeywords.test(title) || jobTitleKeywords.test(company))) {
-          if (currentJob && currentJob.title !== title) experienceEntries.push(currentJob)
-
-          let startYear = null
-          let endYear = null
-          if (dateMatch) {
-            const years = line.match(/\b(19\d\d|20\d\d)\b/g)
-            if (years) {
-              startYear = parseInt(years[0], 10)
-              endYear = line.toLowerCase().includes('present') ? 'Present' : (years[1] ? parseInt(years[1], 10) : 'Present')
-            }
-          }
-
-          currentJob = {
-            title: jobTitleKeywords.test(title) ? title : (company || title),
-            company: jobTitleKeywords.test(title) ? (company || 'Company / Project') : title,
-            startYear,
-            endYear,
-            description: ''
-          }
-        } else if (dateMatch && currentJob) {
-          const years = line.match(/\b(19\d\d|20\d\d)\b/g)
-          if (years) {
-            currentJob.startYear = parseInt(years[0], 10)
-            currentJob.endYear = line.toLowerCase().includes('present') ? 'Present' : (years[1] ? parseInt(years[1], 10) : 'Present')
-          }
-        } else if (currentJob && (line.startsWith('•') || line.startsWith('*') || line.startsWith('-') || (line.length > 5 && !dateMatch))) {
-          const bullet = line.replace(/^[•*\-\s]+/, '')
-          if (currentJob.description) {
-            currentJob.description += ' ' + bullet
-          } else {
-            currentJob.description = bullet
-          }
-        }
-      }
-    }
-    if (currentJob) experienceEntries.push(currentJob)
-  }
-
-  const skillsList = Array.from(foundSkills)
-  const result = {
-    skills: skillsList,
-    education: educationEntries,
-    experience: experienceEntries,
-    certifications: []
-  }
+  const verificationResult = verifySkillsAgainstText([], combinedText)
+  const finalVerifiedObjects = verificationResult.finalSkills
+  const finalSkillNames = finalVerifiedObjects.map((s) => s.name)
+  const technicalSkillNames = verificationResult.technicalSkills.map((s) => s.name)
+  const softSkillNames = verificationResult.softSkills.map((s) => s.name)
 
   return {
     success: true,
-    data: result,
-    ...result
+    data: {
+      skills: finalSkillNames,
+      technicalSkills: technicalSkillNames,
+      softSkills: softSkillNames,
+      verifiedSkills: finalVerifiedObjects,
+      verifiedTechnicalSkills: verificationResult.technicalSkills,
+      verifiedSoftSkills: verificationResult.softSkills,
+      education: [],
+      experience: [],
+      certifications: []
+    },
+    skills: finalSkillNames,
+    technicalSkills: technicalSkillNames,
+    softSkills: softSkillNames,
+    verifiedSkills: finalVerifiedObjects,
+    verifiedTechnicalSkills: verificationResult.technicalSkills,
+    verifiedSoftSkills: verificationResult.softSkills,
+    debugPipeline: {
+      rawTextLength: combinedText.length,
+      candidateSkills: [],
+      removedSkills: verificationResult.removedSkills,
+      finalSkills: finalVerifiedObjects,
+      debugLogs: verificationResult.debugLogs
+    }
   }
 }
 
@@ -632,7 +489,7 @@ const handleResumeParsingRequest = async (req, res) => {
     const isImageFile = req.file && req.file.mimetype && req.file.mimetype.startsWith('image/')
 
     if (!AI_API_KEY) {
-      console.warn('[resume-parser] GEMINI_API_KEY is missing. Returning fallback resume data.')
+      console.warn('[resume-parser] GEMINI_API_KEY missing. Returning fallback skills.')
       return res.status(200).json(fallbackParseResumeText(resumeText, fileName))
     }
 
@@ -640,11 +497,14 @@ const handleResumeParsingRequest = async (req, res) => {
     if (geminiMime === 'image/jpg') geminiMime = 'image/jpeg'
 
     const prompt = [
-      'You are an expert AI resume analyst. Carefully read and analyze the ENTIRE resume (including summary, skills sections, work history, projects, certifications, education, and bullet points).',
-      'Extract ALL technical skills, programming languages, frameworks, libraries, software tools, databases, cloud platforms, devops tools, system architectures, methodologies, and soft skills mentioned anywhere in the document.',
-      'Be thorough: do not omit any valid technical skill or tool mentioned in projects or experience descriptions.',
-      'Return ONLY a valid JSON object with: skills (array of all skill names as clean strings), education (array of { school, degree, startYear, endYear }), experience (array of { company, title, startYear, endYear, description }), certifications (array of strings).',
-      'Do not invent skills that are not in the resume. Return ONLY raw JSON without markdown formatting.'
+      'You are a high-precision AI resume skills analyst.',
+      'CRITICAL MANDATE: Extract skills ONLY from the candidate\'s explicit SKILLS, TECHNICAL SKILLS, TECHNOLOGIES, TOOLS, LANGUAGES, or COMPETENCIES sections in the resume.',
+      'DO NOT extract technologies or tools mentioned exclusively inside Project descriptions or team projects (as projects may be group projects where the candidate did not personally handle every listed technology).',
+      'RULES:',
+      '1. Extract all technical & soft skills explicitly listed in the candidate\'s skills sections.',
+      '2. Standardize recognized abbreviations (e.g., JS -> JavaScript, ReactJS -> React, ML -> Machine Learning, Py -> Python, Postgres -> PostgreSQL, sklearn -> scikit-learn).',
+      '3. DO NOT infer unmentioned skills or related skills.',
+      '4. Return ONLY a valid JSON object formatted as: { "skills": ["Skill1", "Skill2", ...] }'
     ].join(' ')
 
     const userParts = [{ text: prompt }]
@@ -657,10 +517,10 @@ const handleResumeParsingRequest = async (req, res) => {
         },
       })
       if (resumeText && resumeText.trim()) {
-        userParts.push({ text: '---EXTRACTED_OCR_TEXT_START---\n' + resumeText + '\n---EXTRACTED_OCR_TEXT_END---' })
+        userParts.push({ text: '---RESUME_TEXT_START---\n' + resumeText + '\n---RESUME_TEXT_END---' })
       }
     } else {
-      userParts.push({ text: '---RESUME_START---\n' + (resumeText || fileName) + '\n---RESUME_END---' })
+      userParts.push({ text: '---RESUME_TEXT_START---\n' + (resumeText || fileName) + '\n---RESUME_TEXT_END---' })
     }
 
     const contents = [{ role: 'user', parts: userParts }]
@@ -697,15 +557,64 @@ const handleResumeParsingRequest = async (req, res) => {
 
     if (!content) {
       return res.status(200).json(fallbackParseResumeText(resumeText, fileName))
-    const aiSkills = Array.isArray(parsed?.skills) ? parsed.skills.filter((item) => typeof item === 'string').slice(0, 50) : []
-    const fallbackRes = fallbackParseResumeText(resumeText, fileName)
-    const combinedSkillsSet = new Set([...aiSkills, ...fallbackRes.skills])
-    const finalSkillsList = Array.from(combinedSkillsSet)
+    }
+
+    let parsed = {}
+    try {
+      parsed = JSON.parse(content)
+    } catch {
+      return res.status(200).json(fallbackParseResumeText(resumeText, fileName))
+    }
+
+    const rawSkills = Array.isArray(parsed?.skills) ? parsed.skills : []
+    const aiSkillCandidates = rawSkills
+      .map((s) => (typeof s === 'string' ? s : (s.name || s.skill || '')))
+      .filter((s) => typeof s === 'string' && s.trim())
+      .map((s) => s.trim())
+
+    // Deterministic Normalization & Evidence Verification Layer
+    const verificationResult = verifySkillsAgainstText(aiSkillCandidates, resumeText)
+    const finalVerifiedObjects = verificationResult.finalSkills
+    const finalSkillNames = finalVerifiedObjects.map((s) => s.name)
+
+    // Log Pipeline Debugging Steps A - F
+    console.log('\n============== RESUME PARSER PIPELINE DEBUG LOGS ==============')
+    console.log('A. Raw Resume Text Length:', resumeText.length, 'chars')
+    console.log('B. AI Candidate Skills:', aiSkillCandidates)
+    console.log('C. Verified Final Skills:', finalSkillNames)
+    console.log('D. Evidence Objects:', finalVerifiedObjects)
+    console.log('E. Removed Skills:', verificationResult.removedSkills)
+    console.log('=================================================================\n')
+
+    const technicalSkillNames = verificationResult.technicalSkills.map((s) => s.name)
+    const softSkillNames = verificationResult.softSkills.map((s) => s.name)
 
     return res.status(200).json({
       success: true,
-      data: { skills: finalSkillsList },
-      skills: finalSkillsList,
+      data: {
+        skills: finalSkillNames,
+        technicalSkills: technicalSkillNames,
+        softSkills: softSkillNames,
+        verifiedSkills: finalVerifiedObjects,
+        verifiedTechnicalSkills: verificationResult.technicalSkills,
+        verifiedSoftSkills: verificationResult.softSkills,
+        education: [],
+        experience: [],
+        certifications: []
+      },
+      skills: finalSkillNames,
+      technicalSkills: technicalSkillNames,
+      softSkills: softSkillNames,
+      verifiedSkills: finalVerifiedObjects,
+      verifiedTechnicalSkills: verificationResult.technicalSkills,
+      verifiedSoftSkills: verificationResult.softSkills,
+      debugPipeline: {
+        rawTextLength: resumeText.length,
+        candidateSkills: aiSkillCandidates,
+        removedSkills: verificationResult.removedSkills,
+        finalSkills: finalVerifiedObjects,
+        debugLogs: verificationResult.debugLogs
+      }
     })
   } catch (globalErr) {
     console.error('[resume-parser] Unhandled request error, returning fallback:', globalErr)

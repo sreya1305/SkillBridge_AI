@@ -42,6 +42,13 @@ export default function ProfilePage() {
     }
   }
 
+  const clearAllSkills = () => {
+    setSkills([])
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('userSkills')
+    }
+  }
+
   const removeSkill = (index) => {
     const updated = skills.filter((_, i) => i !== index)
     setSkills(updated)
@@ -211,7 +218,16 @@ export default function ProfilePage() {
               {/* Active Skills List */}
               {skills.length > 0 ? (
                 <div className="pt-2">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Added Skills ({skills.length}):</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Added Skills ({skills.length}):</p>
+                    <button
+                      type="button"
+                      onClick={clearAllSkills}
+                      className="text-xs font-semibold text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      Clear All Skills
+                    </button>
+                  </div>
                   <div className="flex flex-wrap gap-2.5">
                     {skills.map((item, index) => (
                       <span

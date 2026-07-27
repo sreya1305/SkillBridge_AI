@@ -272,19 +272,26 @@ export default function ResumeParserPage() {
           {/* Results */}
           {parsed && (() => {
             const data = parsed.data || parsed
-            const skills = Array.isArray(data.skills) ? data.skills : (Array.isArray(parsed.skills) ? parsed.skills : [])
+            const rawSkills = Array.isArray(data.skills) ? data.skills : (Array.isArray(parsed.skills) ? parsed.skills : [])
+            const skillsList = rawSkills.map(s => typeof s === 'string' ? s : (s.name || s.skill || '')).filter(Boolean)
+            const verifiedSkills = data.verifiedSkills || parsed.verifiedSkills || []
+            const debugPipeline = data.debugPipeline || parsed.debugPipeline || null
+
+            const verifiedTechnicalSkills = data.verifiedTechnicalSkills || verifiedSkills.filter(s => s.category === 'technical' || !s.category)
+            const verifiedSoftSkills = data.verifiedSoftSkills || verifiedSkills.filter(s => s.category === 'soft')
+
+            const techSkillNames = data.technicalSkills || verifiedTechnicalSkills.map(s => s.name)
+            const softSkillNames = data.softSkills || verifiedSoftSkills.map(s => s.name)
+
+            // Fallback categorization if backend returned un-categorized array
+            const finalTech = techSkillNames.length > 0 ? techSkillNames : skillsList
+            const finalSoft = softSkillNames
 
             const saveSkillsAndNavigate = (targetPath) => {
               if (typeof window !== 'undefined') {
-                let existingSkills = []
-                try {
-                  const stored = JSON.parse(window.localStorage.getItem('userSkills') || '[]')
-                  existingSkills = Array.isArray(stored) ? stored.map(s => typeof s === 'string' ? s : s.name).filter(Boolean) : []
-                } catch {}
-
-                const mergedSkills = Array.from(new Set([...existingSkills, ...skills]))
-                if (mergedSkills.length > 0) {
-                  window.localStorage.setItem('userSkills', JSON.stringify(mergedSkills))
+                const combinedAll = [...finalTech, ...finalSoft]
+                if (combinedAll.length > 0) {
+                  window.localStorage.setItem('userSkills', JSON.stringify(combinedAll))
                 }
               }
               window.location.href = targetPath
@@ -294,9 +301,9 @@ export default function ResumeParserPage() {
               <div className="grid gap-6">
                 <div className="rounded-3xl border border-emerald-500/40 bg-emerald-950/30 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
-                    <p className="font-bold text-white text-lg">✓ Resume Skills Parsed Successfully!</p>
+                    <p className="font-bold text-white text-lg">✓ Resume Skills Extracted & Categorized!</p>
                     <p className="mt-1 text-sm text-slate-300">
-                      {skills.length} skills detected. Save these skills to your profile and proceed to target role selection.
+                      Found <strong className="text-mint">{finalTech.length} Technical Skills</strong> and <strong className="text-violet-300">{finalSoft.length} Soft Skills</strong> explicitly verified from text.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3 shrink-0">
@@ -310,17 +317,78 @@ export default function ResumeParserPage() {
                   </div>
                 </div>
 
-                <ResultSection title={`Detected Technical & Soft Skills (${skills.length})`}>
-                  {skills.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {skills.map((s) => (
-                        <span key={s} className="rounded-full border border-mint/30 bg-mint/10 px-3.5 py-2 text-sm font-bold text-mint shadow-sm">
-                          {s}
+                {/* Section 1: Technical Skills */}
+                <ResultSection title={`💻 Technical Skills (${finalTech.length})`}>
+                  {finalTech.length > 0 ? (
+                    <div className="flex flex-wrap gap-2.5">
+                      {finalTech.map((skillName, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center rounded-full border border-mint/40 bg-mint/10 px-4 py-2 text-sm font-bold text-mint shadow-sm hover:border-mint/70 transition-all"
+                        >
+                          {skillName}
                         </span>
                       ))}
                     </div>
-                  ) : <p className="text-sm text-slate-400">No skills detected in this document.</p>}
+                  ) : <p className="text-sm text-slate-400">No technical skills detected.</p>}
                 </ResultSection>
+
+                {/* Section 2: Soft & Professional Skills */}
+                <ResultSection title={`🧠 Soft & Professional Skills (${finalSoft.length})`}>
+                  {finalSoft.length > 0 ? (
+                    <div className="flex flex-wrap gap-2.5">
+                      {finalSoft.map((skillName, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center rounded-full border border-violet/40 bg-violet/15 px-4 py-2 text-sm font-bold text-violet-300 shadow-sm hover:border-violet/70 transition-all"
+                        >
+                          🧠 {skillName}
+                        </span>
+                      ))}
+                    </div>
+                  ) : <p className="text-sm text-slate-400">No soft skills detected.</p>}
+                </ResultSection>
+
+                {/* Collapsible Inspection & Evidence Log */}
+                {verifiedSkills.length > 0 && (
+                  <details className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl transition-all">
+                    <summary className="cursor-pointer font-bold text-slate-200 hover:text-white flex items-center justify-between">
+                      <span>🔍 View Extraction Evidence & Pipeline Log ({verifiedSkills.length} Verified Entries)</span>
+                      <span className="text-xs text-mint">Click to Expand ↓</span>
+                    </summary>
+
+                    <div className="mt-6 space-y-4 text-xs">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {verifiedSkills.map((vItem, vIdx) => (
+                          <div key={vIdx} className="rounded-xl border border-white/10 bg-black/40 p-3 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-extrabold text-mint text-sm">{vItem.name}</span>
+                              <span className="text-slate-400">Source Text: <code className="text-emerald-400 font-mono">{vItem.sourceText}</code></span>
+                            </div>
+                            {vItem.evidence && (
+                              <p className="text-slate-300 italic bg-white/5 p-2 rounded border border-white/5">
+                                "{vItem.evidence}"
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {debugPipeline && debugPipeline.removedSkills && debugPipeline.removedSkills.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                          <p className="font-bold text-amber-400 mb-2">Unverified / Excluded Candidates ({debugPipeline.removedSkills.length}):</p>
+                          <div className="flex flex-wrap gap-2">
+                            {debugPipeline.removedSkills.map((rem, rIdx) => (
+                              <span key={rIdx} className="rounded bg-red-950/40 border border-red-500/30 px-2 py-1 text-red-300">
+                                ✕ {rem.candidate} ({rem.reason})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                )}
               </div>
             )
           })()}
