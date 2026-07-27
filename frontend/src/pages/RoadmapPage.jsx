@@ -434,7 +434,7 @@ export default function RoadmapPage() {
                 {/* Animated Progress Bar */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                    <span className="text-mint font-extrabold flex items-center gap-1.5">
+                    <span className="text-violet-300 font-extrabold flex items-center gap-1.5">
                       <span>📊</span> Progress Tracker
                     </span>
                     <span>{metrics.completed} of {metrics.total} items completed</span>
@@ -624,13 +624,13 @@ export default function RoadmapPage() {
 
                                     {/* Practical Task */}
                                     {step.practicalTask && (
-                                      <div className="rounded-xl bg-amber-950/30 border border-amber-500/30 p-3 text-xs text-amber-200 space-y-1">
-                                        <p className="font-bold text-amber-300">⚡ Practical Application Task:</p>
-                                        <p className="text-amber-200 leading-relaxed">{step.practicalTask}</p>
+                                      <div className="rounded-xl border border-violet-500/40 bg-gradient-to-r from-violet-950/50 to-indigo-950/40 p-3.5 text-xs text-slate-200 shadow-md backdrop-blur-md space-y-1">
+                                        <p className="font-bold text-violet-300 font-extrabold">⚡ Practical Application Task:</p>
+                                        <p className="text-slate-200 leading-relaxed font-medium">{step.practicalTask}</p>
                                         {criteria.length > 0 && (
                                           <div className="pt-1">
-                                            <p className="font-semibold text-amber-300 text-[11px]">Completion Criteria:</p>
-                                            <ul className="list-disc pl-4 text-[11px] text-amber-200 space-y-0.5">
+                                            <p className="font-semibold text-violet-300 font-extrabold text-[11px]">Completion Criteria:</p>
+                                            <ul className="list-disc pl-4 text-[11px] text-violet-200/90 space-y-0.5">
                                               {criteria.map((c, cIdx) => (
                                                 <li key={cIdx}>{c}</li>
                                               ))}
@@ -727,9 +727,9 @@ export default function RoadmapPage() {
 
                                     {/* Actionable Task */}
                                     {sb.actionableTask && (
-                                      <div className="rounded-xl bg-amber-950/30 border border-amber-500/30 p-3 text-xs text-amber-200 space-y-1">
-                                        <p className="font-bold text-amber-300">⚡ Hands-on Skill Task:</p>
-                                        <p className="text-amber-200 leading-relaxed">{sb.actionableTask}</p>
+                                      <div className="rounded-xl border border-violet-500/40 bg-gradient-to-r from-violet-950/50 to-indigo-950/40 p-3.5 text-xs text-slate-200 shadow-md backdrop-blur-md space-y-1">
+                                        <p className="font-bold text-violet-300 font-extrabold">⚡ Hands-on Skill Task:</p>
+                                        <p className="text-slate-200 leading-relaxed font-medium">{sb.actionableTask}</p>
                                       </div>
                                     )}
                                   </div>
