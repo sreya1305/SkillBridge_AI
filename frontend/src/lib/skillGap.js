@@ -1,34 +1,55 @@
 const SKILL_SYNONYMS = {
+  html: ['html5', 'html 5'],
+  html5: ['html', 'html 5'],
+  css: ['css3', 'css 3', 'sass', 'scss'],
+  css3: ['css', 'css 3'],
   javascript: ['js', 'es6', 'ecmascript'],
   js: ['javascript', 'es6', 'ecmascript'],
   typescript: ['ts'],
   ts: ['typescript'],
   python: ['py', 'py3', 'python3'],
   py: ['python', 'py3', 'python3'],
-  react: ['reactjs', 'react.js'],
+  c: ['c language', 'c programming', 'c lang', 'clang'],
+  'c++': ['cpp', 'c plus plus'],
+  cpp: ['c++', 'c plus plus'],
+  'c#': ['csharp', 'c sharp', '.net'],
+  csharp: ['c#', 'c sharp'],
+  react: ['reactjs', 'react.js', 'react native'],
   reactjs: ['react', 'react.js'],
   'react.js': ['react', 'reactjs'],
+  vue: ['vuejs', 'vue.js', 'vue3'],
+  vuejs: ['vue', 'vue.js'],
+  'vue.js': ['vue', 'vuejs'],
   node: ['nodejs', 'node.js'],
   nodejs: ['node', 'node.js'],
   'node.js': ['node', 'nodejs'],
+  express: ['expressjs', 'express.js'],
+  expressjs: ['express', 'express.js'],
+  'express.js': ['express', 'expressjs'],
+  next: ['nextjs', 'next.js'],
+  nextjs: ['next', 'next.js'],
+  'next.js': ['next', 'nextjs'],
   ml: ['machine learning', 'ai'],
   'machine learning': ['ml', 'ai'],
   ai: ['machine learning', 'ml'],
-  sql: ['mysql', 'postgresql', 'postgres', 'databases'],
+  dbms: ['database', 'databases', 'rdbms', 'database management', 'sql'],
+  rdbms: ['dbms', 'database', 'databases', 'sql'],
+  database: ['dbms', 'rdbms', 'databases', 'sql'],
+  databases: ['dbms', 'rdbms', 'database', 'sql'],
+  sql: ['mysql', 'postgresql', 'postgres', 'databases', 'dbms'],
   postgres: ['postgresql', 'sql', 'databases'],
   postgresql: ['postgres', 'sql', 'databases'],
-  databases: ['sql', 'postgres', 'postgresql', 'db'],
-  db: ['databases', 'sql'],
+  db: ['databases', 'sql', 'dbms'],
   dsa: ['data structures and algorithms', 'algorithms', 'data structures'],
   algo: ['data structures and algorithms', 'algorithms'],
   algorithms: ['data structures and algorithms', 'dsa'],
-  oop: ['object-oriented programming', 'object oriented programming'],
-  api: ['apis and http', 'apis', 'http', 'rest'],
-  apis: ['apis and http', 'api', 'http', 'rest'],
+  oop: ['object-oriented programming', 'object oriented programming', 'oops'],
+  api: ['apis and http', 'apis', 'http', 'rest', 'rest api'],
+  apis: ['apis and http', 'api', 'http', 'rest', 'rest api'],
   git: ['github', 'gitlab', 'version control'],
-  bash: ['shell', 'scripting'],
+  bash: ['shell', 'scripting', 'powershell'],
   shell: ['bash', 'scripting'],
-  linux: ['ubuntu'],
+  linux: ['ubuntu', 'unix'],
   pandas: ['numpy'],
   numpy: ['pandas'],
   figma: [],
@@ -64,7 +85,14 @@ function toWords(str) {
 function getEquivalentTokens(word) {
   const norm = cleanStr(word)
   const results = new Set([norm])
-  const syns = SKILL_SYNONYMS[norm]
+  
+  // Base version strip fallback e.g. "html5" -> "html", "css3" -> "css"
+  const baseNorm = norm.replace(/\d+$/, '')
+  if (baseNorm && baseNorm.length >= 2) {
+    results.add(baseNorm)
+  }
+
+  const syns = SKILL_SYNONYMS[norm] || SKILL_SYNONYMS[baseNorm]
   if (syns) {
     syns.forEach((s) => {
       toWords(s).forEach((w) => results.add(cleanStr(w)))
@@ -82,7 +110,12 @@ function isSingleSkillMatched(requiredSkill, userSkillInput) {
   // 1. Direct clean match
   if (reqClean === userClean) return true
 
-  // 2. Word token & synonym match (e.g. required "HTML and CSS", user "CSS" or "HTML")
+  // 2. Base version match e.g. "html" vs "html5" or "css" vs "css3"
+  const reqBase = reqClean.replace(/\d+$/, '')
+  const userBase = userClean.replace(/\d+$/, '')
+  if (reqBase.length >= 2 && reqBase === userBase) return true
+
+  // 3. Word token & synonym match (e.g. required "HTML and CSS", user "CSS" or "HTML5")
   const reqWords = toWords(requiredSkill)
   const userWords = toWords(userSkillInput)
 
