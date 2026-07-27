@@ -1,10 +1,11 @@
 /**
  * Comprehensive Canonical Skills & Approved Aliases Dictionary
- * Enables high-precision and high-recall skill extraction with distinct Technical vs Soft categories.
+ * Enables high-precision and high-recall technical skill extraction.
+ * Excludes project section technologies (group project leaks) while accepting Skills, Experience, Education, and Certifications sections.
  */
 
 const SKILLS_DICTIONARY = [
-  // Programming Languages (Technical)
+  // Programming Languages & CS Core (Technical)
   { canonical: 'JavaScript', category: 'technical', aliases: ['javascript', 'js', 'java script', 'ecmascript'] },
   { canonical: 'TypeScript', category: 'technical', aliases: ['typescript', 'ts', 'type script'] },
   { canonical: 'Python', category: 'technical', aliases: ['python', 'py', 'python3', 'python2'] },
@@ -29,6 +30,14 @@ const SKILLS_DICTIONARY = [
   { canonical: 'Bash', category: 'technical', aliases: ['bash', 'sh', 'shell script', 'shell scripting', 'shell'] },
   { canonical: 'PowerShell', category: 'technical', aliases: ['powershell', 'pwsh'] },
   { canonical: 'Solidity', category: 'technical', aliases: ['solidity'] },
+
+  // Computer Science Core (Technical)
+  { canonical: 'DBMS', category: 'technical', aliases: ['dbms', 'rdbms', 'dbms concepts', 'database management', 'database management system', 'database management systems'] },
+  { canonical: 'OOP', category: 'technical', aliases: ['oop', 'oops', 'oop concepts', 'oops concepts', 'object oriented programming', 'object-oriented programming'] },
+  { canonical: 'Data Structures', category: 'technical', aliases: ['dsa', 'data structures', 'data structures & algorithms', 'data structures and algorithms', 'ds'] },
+  { canonical: 'Algorithms', category: 'technical', aliases: ['algorithms', 'algo', 'algos'] },
+  { canonical: 'Operating Systems', category: 'technical', aliases: ['operating systems', 'os', 'operating system'] },
+  { canonical: 'Computer Networks', category: 'technical', aliases: ['computer networks', 'networking', 'cn', 'computer network'] },
 
   // Frontend Frameworks & Libraries (Technical)
   { canonical: 'React', category: 'technical', aliases: ['react', 'react.js', 'reactjs', 'react js'] },
@@ -130,25 +139,7 @@ const SKILLS_DICTIONARY = [
   { canonical: 'Jira', category: 'technical', aliases: ['jira'] },
   { canonical: 'Postman', category: 'technical', aliases: ['postman'] },
   { canonical: 'Unit Testing', category: 'technical', aliases: ['unit testing', 'jest', 'mocha', 'cypress', 'pytest', 'junit'] },
-  { canonical: 'Agile', category: 'technical', aliases: ['agile', 'scrum'] },
-
-  // Soft & Professional Skills (Soft)
-  { canonical: 'Communication', category: 'soft', aliases: ['communication', 'verbal communication', 'written communication', 'effective communication', 'presentation skills', 'public speaking'] },
-  { canonical: 'Leadership', category: 'soft', aliases: ['leadership', 'team leadership', 'team management', 'mentorship', 'coaching', 'people management'] },
-  { canonical: 'Problem Solving', category: 'soft', aliases: ['problem solving', 'problem-solving', 'analytical skills', 'analytical thinking', 'troubleshooting', 'critical thinking', 'critical reasoning'] },
-  { canonical: 'Project Management', category: 'soft', aliases: ['project management', 'project manager', 'pmp', 'agile management', 'program management', 'task management'] },
-  { canonical: 'Teamwork', category: 'soft', aliases: ['teamwork', 'collaboration', 'cross-functional collaboration', 'team player', 'collaborative'] },
-  { canonical: 'Time Management', category: 'soft', aliases: ['time management', 'prioritization', 'multitasking', 'organization', 'time prioritization'] },
-  { canonical: 'Adaptability', category: 'soft', aliases: ['adaptability', 'flexibility', 'adaptable', 'fast learner', 'quick learner'] },
-  { canonical: 'Creativity', category: 'soft', aliases: ['creativity', 'creative thinking', 'innovation', 'innovative thinking'] },
-  { canonical: 'Decision Making', category: 'soft', aliases: ['decision making', 'decision-making', 'strategic decision making', 'decisiveness'] },
-  { canonical: 'Conflict Resolution', category: 'soft', aliases: ['conflict resolution', 'negotiation', 'mediation'] },
-  { canonical: 'Strategic Thinking', category: 'soft', aliases: ['strategic thinking', 'strategic planning', 'strategy'] },
-  { canonical: 'Emotional Intelligence', category: 'soft', aliases: ['emotional intelligence', 'eq', 'empathy'] },
-  { canonical: 'Attention to Detail', category: 'soft', aliases: ['attention to detail', 'detail-oriented', 'detail oriented', 'meticulous'] },
-  { canonical: 'Work Ethic', category: 'soft', aliases: ['work ethic', 'dedication', 'self-motivated', 'self motivation', 'ownership', 'accountability'] },
-  { canonical: 'Customer Service', category: 'soft', aliases: ['customer service', 'client relations', 'stakeholder management', 'customer support'] },
-  { canonical: 'Interpersonal Skills', category: 'soft', aliases: ['interpersonal skills', 'interpersonal communication', 'relationship building'] }
+  { canonical: 'Agile', category: 'technical', aliases: ['agile', 'scrum'] }
 ]
 
 function normalizeText(text = '') {
@@ -182,6 +173,40 @@ function findEvidence(rawText, sourceText) {
   return `Found in resume: "${sourceText}"`
 }
 
+/**
+ * Strips out Project sections from resume text to prevent group project skill leaks
+ */
+function removeProjectSections(rawText = '') {
+  if (!rawText) return ''
+
+  const lines = rawText.split(/\r?\n/)
+  const filteredLines = []
+  let insideProjectSection = false
+
+  const projectHeaderRegex = /^\s*(projects|project experience|personal projects|academic projects|key projects|recent projects)\b/i
+  const nonProjectHeaderRegex = /^\s*(skills|technical skills|soft skills|technologies|tools|work experience|experience|employment history|employment|education|certifications|summary|profile|achievements|languages|declarations)\b/i
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (projectHeaderRegex.test(trimmed)) {
+      insideProjectSection = true
+      continue
+    }
+
+    if (insideProjectSection) {
+      if (nonProjectHeaderRegex.test(trimmed)) {
+        insideProjectSection = false
+        filteredLines.push(line)
+      }
+      continue
+    }
+
+    filteredLines.push(line)
+  }
+
+  return filteredLines.join('\n')
+}
+
 function extractExplicitSkillsSectionText(rawText = '') {
   if (!rawText) return ''
 
@@ -200,22 +225,73 @@ function extractExplicitSkillsSectionText(rawText = '') {
   return rawText
 }
 
+// Strict regex for noise words and generic phrases that should NEVER be extracted as standalone skills
+const NOISE_WORDS_REGEX = /\b(technologies|technology|technologies used|relevant technologies|tools used|concepts|core concepts|basic concepts|programming concepts|fundamentals|basics|overview|knowledge|experience|proficiency|proficient|familiarity|familiar|intermediate|advanced|expert|working knowledge|hands-on|etc|others|other|languages|programming languages|scripting languages|databases|tools|frameworks|skills|soft skills|technical skills|libraries|platforms|operating systems|devops|cloud|used|skills & technologies|communication|leadership|teamwork|collaboration|problem solving|time management|adaptability|creativity|interpersonal skills|work ethic|conflict resolution|public speaking|presentation skills|negotiation)\b/i
+
 /**
- * High-Precision & High-Recall Skill Extraction Verification
+ * Directly extracts item tokens explicitly typed inside an explicit SKILLS section
+ */
+function parseExplicitSkillsSectionItems(skillsSectionText = '') {
+  if (!skillsSectionText || skillsSectionText.length < 3) return []
+
+  const lines = skillsSectionText.split(/\r?\n/)
+  const extracted = []
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    // Skip top section header
+    if (/^\s*(technical skills|skills|technologies|tools & technologies|tools|core competencies|programming languages|skills & competencies|soft skills)\b[:\r\n\t]?$/i.test(trimmed)) {
+      continue
+    }
+
+    // Strip generic inline subheadings ending with colons e.g. "Programming Concepts:", "Databases:", "Tools:", "Frameworks:", "Technologies Used:"
+    const contentLine = trimmed.replace(/^[a-z0-9\s&/\\-]+:\s*/i, '')
+
+    // Split line by commas, semicolons, bullets, slashes, or pipes
+    const tokens = contentLine.split(/[,;\t|•\*·/]+/)
+    for (let token of tokens) {
+      let cleaned = token.replace(/^[•\*·\-\s]+/, '').replace(/[\s]+$/, '').trim()
+      // Remove trailing parenthetical details if present e.g. "Python (Proficient)" -> "Python"
+      cleaned = cleaned.replace(/\s*\([^)]*\)/g, '').trim()
+
+      if (cleaned.length >= 1 && cleaned.length <= 45 && !NOISE_WORDS_REGEX.test(cleaned)) {
+        extracted.push(cleaned)
+      }
+    }
+  }
+
+  return extracted
+}
+
+/**
+ * High-Precision & High-Recall Technical Skill Extraction Verification
+ * Strictly excludes Projects sections while accepting Skills, Experience, Education, and Certifications.
+ * Soft skills and generic header noise words (e.g. "technologies") are completely filtered out.
  */
 function verifySkillsAgainstText(candidateSkills = [], rawText = '') {
-  const skillsSectionText = extractExplicitSkillsSectionText(rawText)
+  const allowedText = removeProjectSections(rawText)
+  const normAllowedText = ' ' + normalizeText(allowedText) + ' '
+
+  const skillsSectionText = extractExplicitSkillsSectionText(allowedText)
   const normSkillsSectionText = ' ' + normalizeText(skillsSectionText) + ' '
-  const normRawText = ' ' + normalizeText(rawText) + ' '
+
+  // Combine AI candidates + Direct items parsed from SKILLS section to guarantee 100% recall
+  const directSkillsSectionItems = parseExplicitSkillsSectionItems(skillsSectionText)
+  const mergedCandidates = Array.from(new Set([...directSkillsSectionItems, ...candidateSkills]))
 
   const verifiedMap = new Map() // canonicalName -> { name, category, evidence, sourceText, confidence }
   const removedSkills = []
   const debugLogs = []
 
-  // Step 1: Process Candidate Skills returned by AI / Parser
-  for (const rawCandidate of candidateSkills) {
+  // Step 1: Process Candidate Skills returned by AI / Parser + Direct SKILLS section items
+  for (const rawCandidate of mergedCandidates) {
     const candStr = (typeof rawCandidate === 'string' ? rawCandidate : (rawCandidate.name || rawCandidate.skill || '')).trim()
     if (!candStr) continue
+
+    // Skip generic noise tokens e.g. "technologies", "concepts", "tools used"
+    if (NOISE_WORDS_REGEX.test(candStr)) continue
 
     const normCand = normalizeText(candStr)
     let matchedEntry = null
@@ -236,10 +312,16 @@ function verifySkillsAgainstText(candidateSkills = [], rawText = '') {
     }
 
     if (!matchedEntry) {
+      // Filter out soft skills completely
+      const isSoftSkill = /\b(communication|leadership|team leadership|people management|problem solving|teamwork|collaboration|time management|adaptability|creativity|conflict resolution|strategic thinking|emotional intelligence|attention to detail|work ethic|customer service|interpersonal)\b/i.test(candStr)
+        && !/\b(dbms|rdbms|database|sql|postgres|mysql|mongo|redis|system|architecture|agile|scrum|data structures|algorithms|operating systems|computer networks|oop|oops)\b/i.test(candStr)
+      
+      if (isSoftSkill) continue // Skip soft skills completely
+
       matchedEntry = { canonical: candStr, category: 'technical', aliases: [candStr] }
     }
 
-    // Check text presence: Prefer explicit skills section text first, then fallback to full text
+    // Check text presence ONLY inside allowedText (Skills + Experience + Education + Certifications, NO Projects!)
     let verifiedSourceText = null
     for (const alias of matchedEntry.aliases) {
       const normAlias = normalizeText(alias)
@@ -256,7 +338,7 @@ function verifySkillsAgainstText(candidateSkills = [], rawText = '') {
         const normAlias = normalizeText(alias)
         if (!normAlias) continue
 
-        if (normRawText.includes(' ' + normAlias + ' ') || normRawText.includes(normAlias)) {
+        if (normAllowedText.includes(' ' + normAlias + ' ') || normAllowedText.includes(normAlias)) {
           verifiedSourceText = alias
           break
         }
@@ -264,31 +346,29 @@ function verifySkillsAgainstText(candidateSkills = [], rawText = '') {
     }
 
     // Fallback if raw text is empty/unstructured
-    if (!verifiedSourceText && (rawText.length < 50 || normRawText.length < 30)) {
+    if (!verifiedSourceText && (rawText.length < 50 || normAllowedText.length < 30)) {
       verifiedSourceText = candStr
     }
 
     if (verifiedSourceText) {
       const canonicalName = matchedEntry.canonical || candStr
-      const category = matchedEntry.category || 'technical'
       if (!verifiedMap.has(canonicalName)) {
-        const evidence = findEvidence(skillsSectionText.length > 20 ? skillsSectionText : rawText, verifiedSourceText)
+        const evidence = findEvidence(skillsSectionText.length > 20 ? skillsSectionText : allowedText, verifiedSourceText)
         verifiedMap.set(canonicalName, {
           name: canonicalName,
-          category,
+          category: 'technical',
           evidence,
           sourceText: verifiedSourceText,
           confidence: 'high'
         })
-        debugLogs.push({ status: 'VERIFIED', candidate: candStr, canonical: canonicalName, category, sourceText: verifiedSourceText })
+        debugLogs.push({ status: 'VERIFIED', candidate: candStr, canonical: canonicalName, category: 'technical', sourceText: verifiedSourceText })
       }
     } else {
-      removedSkills.push({ candidate: candStr, reason: 'Not found in resume text' })
+      removedSkills.push({ candidate: candStr, reason: 'Exclusively in Projects section (group project filtering)' })
     }
   }
 
-  // Step 2: High Recall - Scan skillsSectionText & rawText against SKILLS_DICTIONARY
-  const scanTargetText = normSkillsSectionText.length > 30 ? normSkillsSectionText : normRawText
+  // Step 2: High Recall - Scan allowedText (Skills, Experience, Education) against SKILLS_DICTIONARY
   for (const item of SKILLS_DICTIONARY) {
     if (verifiedMap.has(item.canonical)) continue
 
@@ -299,29 +379,27 @@ function verifySkillsAgainstText(candidateSkills = [], rawText = '') {
       const escaped = normAlias.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
       const reg = new RegExp(`(?:^|[^a-z0-9+#.])${escaped}(?:$|[^a-z0-9+#.])`, 'i')
 
-      if (reg.test(scanTargetText)) {
-        const evidence = findEvidence(skillsSectionText.length > 20 ? skillsSectionText : rawText, alias)
+      if (reg.test(normAllowedText)) {
+        const evidence = findEvidence(skillsSectionText.length > 20 ? skillsSectionText : allowedText, alias)
         verifiedMap.set(item.canonical, {
           name: item.canonical,
-          category: item.category || 'technical',
+          category: 'technical',
           evidence,
           sourceText: alias,
           confidence: 'high'
         })
-        debugLogs.push({ status: 'RECALLED_FROM_TEXT', canonical: item.canonical, category: item.category || 'technical', sourceText: alias })
+        debugLogs.push({ status: 'RECALLED_FROM_ALLOWED_SECTIONS', canonical: item.canonical, category: 'technical', sourceText: alias })
         break
       }
     }
   }
 
   const allVerified = Array.from(verifiedMap.values())
-  const technicalSkills = allVerified.filter(s => s.category === 'technical')
-  const softSkills = allVerified.filter(s => s.category === 'soft')
 
   return {
     finalSkills: allVerified,
-    technicalSkills,
-    softSkills,
+    technicalSkills: allVerified,
+    softSkills: [],
     removedSkills,
     debugLogs
   }
@@ -331,6 +409,8 @@ export {
   SKILLS_DICTIONARY,
   normalizeText,
   findEvidence,
+  removeProjectSections,
   extractExplicitSkillsSectionText,
+  parseExplicitSkillsSectionItems,
   verifySkillsAgainstText
 }

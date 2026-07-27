@@ -289,9 +289,8 @@ export default function ResumeParserPage() {
 
             const saveSkillsAndNavigate = (targetPath) => {
               if (typeof window !== 'undefined') {
-                const combinedAll = [...finalTech, ...finalSoft]
-                if (combinedAll.length > 0) {
-                  window.localStorage.setItem('userSkills', JSON.stringify(combinedAll))
+                if (finalTech.length > 0) {
+                  window.localStorage.setItem('userSkills', JSON.stringify(finalTech))
                 }
               }
               window.location.href = targetPath
@@ -301,9 +300,9 @@ export default function ResumeParserPage() {
               <div className="grid gap-6">
                 <div className="rounded-3xl border border-emerald-500/40 bg-emerald-950/30 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
-                    <p className="font-bold text-white text-lg">✓ Resume Skills Extracted & Categorized!</p>
+                    <p className="font-bold text-white text-lg">✓ Resume Technical Skills Extracted!</p>
                     <p className="mt-1 text-sm text-slate-300">
-                      Found <strong className="text-mint">{finalTech.length} Technical Skills</strong> and <strong className="text-violet-300">{finalSoft.length} Soft Skills</strong> explicitly verified from text.
+                      Found <strong className="text-mint">{finalTech.length} Technical Skills</strong> explicitly verified from text.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3 shrink-0">
@@ -317,7 +316,7 @@ export default function ResumeParserPage() {
                   </div>
                 </div>
 
-                {/* Section 1: Technical Skills */}
+                {/* Technical Skills Section */}
                 <ResultSection title={`💻 Technical Skills (${finalTech.length})`}>
                   {finalTech.length > 0 ? (
                     <div className="flex flex-wrap gap-2.5">
@@ -331,22 +330,6 @@ export default function ResumeParserPage() {
                       ))}
                     </div>
                   ) : <p className="text-sm text-slate-400">No technical skills detected.</p>}
-                </ResultSection>
-
-                {/* Section 2: Soft & Professional Skills */}
-                <ResultSection title={`🧠 Soft & Professional Skills (${finalSoft.length})`}>
-                  {finalSoft.length > 0 ? (
-                    <div className="flex flex-wrap gap-2.5">
-                      {finalSoft.map((skillName, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center rounded-full border border-violet/40 bg-violet/15 px-4 py-2 text-sm font-bold text-violet-300 shadow-sm hover:border-violet/70 transition-all"
-                        >
-                          🧠 {skillName}
-                        </span>
-                      ))}
-                    </div>
-                  ) : <p className="text-sm text-slate-400">No soft skills detected.</p>}
                 </ResultSection>
 
                 {/* Collapsible Inspection & Evidence Log */}
