@@ -333,7 +333,7 @@ const upload = multer({
 })
 
 const app = express();
-app.use(cors({ origin: FRONTEND_ORIGIN }));
+app.use(cors());
 app.use(express.json());
 
 app.get('/health', (req, res) => {
@@ -406,36 +406,43 @@ async function safeOcrImage(buffer) {
 }
 
 function fallbackParseResumeText(text = '', fileName = '') {
-  const combined = (text + ' ' + fileName).toLowerCase()
+  const combinedText = (text || '') + ' ' + (fileName || '')
+  if (!combinedText.trim()) {
+    return {
+      success: true,
+      data: { skills: [], education: [], experience: [], certifications: [] },
+      skills: [], education: [], experience: [], certifications: []
+    }
+  }
+
+  const padded = ' ' + combinedText.replace(/[\r\n\t]+/g, ' ') + ' '
   const foundSkills = new Set()
 
   const masterSkillsList = [
-    'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'C', 'PHP', 'Ruby', 'Go', 'Golang',
-    'Rust', 'Swift', 'Kotlin', 'R', 'Dart', 'Scala', 'MATLAB', 'Perl', 'HTML', 'HTML5', 'CSS', 'CSS3', 'SQL',
+    'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'PHP', 'Ruby', 'Golang', 'Go',
+    'Rust', 'Swift', 'Kotlin', 'MATLAB', 'HTML5', 'CSS3', 'HTML', 'CSS', 'SQL',
     'React', 'React.js', 'React Native', 'Vue', 'Vue.js', 'Angular', 'Next.js', 'Nuxt.js', 'Svelte',
-    'Redux', 'Tailwind CSS', 'Bootstrap', 'Sass', 'SCSS', 'jQuery', 'Webpack', 'Vite', 'REST API', 'GraphQL',
-    'Node.js', 'Express.js', 'NestJS', 'Django', 'Flask', 'FastAPI', 'Spring', 'Spring Boot',
-    'ASP.NET', '.NET', 'Laravel', 'Ruby on Rails', 'Microservices', 'RESTful APIs',
+    'Redux', 'Tailwind CSS', 'Bootstrap', 'Sass', 'SCSS', 'jQuery', 'Webpack', 'Vite', 'GraphQL',
+    'Node.js', 'Express.js', 'NestJS', 'Django', 'Flask', 'FastAPI', 'Spring Boot',
+    'Laravel', 'Ruby on Rails', 'Microservices', 'RESTful APIs', 'REST API',
     'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQLite', 'Oracle', 'SQL Server', 'Firebase',
-    'Firestore', 'DynamoDB', 'Cassandra', 'Elasticsearch', 'Prisma', 'Sequelize',
+    'DynamoDB', 'Cassandra', 'Elasticsearch', 'Prisma', 'Sequelize',
     'AWS', 'Amazon Web Services', 'Azure', 'GCP', 'Google Cloud Platform', 'Docker', 'Kubernetes',
-    'CI/CD', 'Jenkins', 'GitHub Actions', 'Terraform', 'Ansible', 'Nginx', 'Linux', 'Bash', 'Shell',
+    'CI/CD', 'Jenkins', 'GitHub Actions', 'Terraform', 'Ansible', 'Nginx', 'Linux', 'Bash',
     'Machine Learning', 'Deep Learning', 'Artificial Intelligence', 'Data Analysis', 'Data Science',
     'Pandas', 'NumPy', 'Scikit-Learn', 'TensorFlow', 'PyTorch', 'Keras', 'OpenCV', 'NLP', 'LLMs',
-    'Power BI', 'Tableau', 'Matplotlib', 'Seaborn', 'Big Data', 'Spark', 'Hadoop',
+    'Power BI', 'Tableau', 'Matplotlib', 'Seaborn', 'Spark', 'Hadoop',
     'Flutter', 'Android', 'iOS', 'Expo', 'SwiftUI',
-    'Git', 'GitHub', 'GitLab', 'Jira', 'Postman', 'Figma', 'Canva', 'Trello', 'VS Code', 'Bitbucket',
-    'Data Structures', 'Algorithms', 'Object-Oriented Programming', 'OOP', 'System Design',
-    'Agile', 'Scrum', 'Kanban', 'Unit Testing', 'TDD', 'Clean Code',
-    'Coding', 'Debugging', 'Database', 'Software Development',
-    'Communication', 'Leadership', 'Problem Solving', 'Critical Thinking', 'Project Management',
-    'Teamwork', 'Time Management', 'Collaboration', 'Analytical Skills'
+    'Git', 'GitHub', 'GitLab', 'Jira', 'Postman', 'Figma', 'Canva', 'Trello', 'VS Code',
+    'Data Structures', 'Algorithms', 'Object-Oriented Programming', 'System Design',
+    'Agile', 'Scrum', 'Unit Testing', 'TDD',
+    'Communication', 'Leadership', 'Problem Solving', 'Project Management'
   ]
 
   masterSkillsList.forEach((skill) => {
     const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
-    const reg = new RegExp(`(?:^|\\b|[^a-zA-Z0-9])${escaped}(?:$|\\b|[^a-zA-Z0-9])`, 'i')
-    if (reg.test(combined)) {
+    const reg = new RegExp(`(?:^|[^a-zA-Z0-9+#.])${escaped}(?:$|[^a-zA-Z0-9+#.])`, 'i')
+    if (reg.test(padded)) {
       foundSkills.add(skill)
     }
   })
@@ -486,44 +493,80 @@ function fallbackParseResumeText(text = '', fileName = '') {
     }
   }
 
-  // 2. Experience Section Block Extraction
+  // 2. Experience & Internship Section Block Extraction
   const experienceEntries = []
   if (text) {
     const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
     let inExp = false
     let currentJob = null
 
+    const expHeaderRegex = /^\s*(work experience|experience|employment|professional history|internship|internships|internship experience|projects & internships|career history|trainings & internships)[\s:]*$/i
+    const stopHeaderRegex = /^\s*(education|skills|certifications|references|academic background)[\s:]*$/i
+
+    const jobTitleKeywords = /developer|engineer|architect|intern|internship|manager|lead|consultant|designer|analyst|specialist|administrator|freelancer|founder|co-founder|director|associate|programmer|full stack|frontend|backend|web|software|data scientist|ui\/ux/i
+    const garbageKeywords = /nativewind|expo|page\s*\d|1 of|2 of|skills|tools|technologies|frameworks|libraries/i
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
 
-      if (/^\s*(work experience|experience|employment|projects|professional history)[\s:]*$/i.test(line)) {
+      if (expHeaderRegex.test(line)) {
         inExp = true
         continue
-      } else if (inExp && /^\s*(education|skills|certifications|references)[\s:]*$/i.test(line)) {
+      } else if (inExp && stopHeaderRegex.test(line)) {
         inExp = false
         if (currentJob) { experienceEntries.push(currentJob); currentJob = null }
       }
 
       if (inExp) {
-        const jobHeaderMatch = line.match(/^([A-Za-z\s]+)\s*[,@|]\s*([A-Za-z0-9\s,&]+)$/)
+        if (garbageKeywords.test(line)) continue
+
         const dateMatch = line.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December|\d{4})\s*[-–to]+\s*(Present|Current|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December|\d{4})\b/i)
 
-        if (jobHeaderMatch && !dateMatch) {
-          if (currentJob) experienceEntries.push(currentJob)
+        let company = ''
+        let title = ''
+
+        if (/\b(at|@)\b/i.test(line)) {
+          const parts = line.split(/\b(?:at|@)\b/i)
+          title = parts[0].trim()
+          company = parts.slice(1).join(' at ').trim()
+        } else {
+          const headerMatch = line.match(/^([A-Za-z0-9\s().+#-]+?)\s*[,|–-]\s*([A-Za-z0-9\s().+#-,&]+)$/)
+          if (headerMatch) {
+            title = headerMatch[1].trim()
+            company = headerMatch[2].trim()
+          } else if (jobTitleKeywords.test(line) && !dateMatch) {
+            title = line.trim()
+            company = ''
+          }
+        }
+
+        if (title && (jobTitleKeywords.test(title) || jobTitleKeywords.test(company))) {
+          if (currentJob && currentJob.title !== title) experienceEntries.push(currentJob)
+
+          let startYear = null
+          let endYear = null
+          if (dateMatch) {
+            const years = line.match(/\b(19\d\d|20\d\d)\b/g)
+            if (years) {
+              startYear = parseInt(years[0], 10)
+              endYear = line.toLowerCase().includes('present') ? 'Present' : (years[1] ? parseInt(years[1], 10) : 'Present')
+            }
+          }
+
           currentJob = {
-            title: jobHeaderMatch[1].trim(),
-            company: jobHeaderMatch[2].trim(),
-            startYear: null,
-            endYear: null,
+            title: jobTitleKeywords.test(title) ? title : (company || title),
+            company: jobTitleKeywords.test(title) ? (company || 'Company / Project') : title,
+            startYear,
+            endYear,
             description: ''
           }
         } else if (dateMatch && currentJob) {
-          const yearMatches = line.match(/\b(19\d\d|20\d\d)\b/g)
-          if (yearMatches) {
-            currentJob.startYear = parseInt(yearMatches[0], 10)
-            currentJob.endYear = yearMatches[1] ? parseInt(yearMatches[1], 10) : 2026
+          const years = line.match(/\b(19\d\d|20\d\d)\b/g)
+          if (years) {
+            currentJob.startYear = parseInt(years[0], 10)
+            currentJob.endYear = line.toLowerCase().includes('present') ? 'Present' : (years[1] ? parseInt(years[1], 10) : 'Present')
           }
-        } else if ((line.startsWith('•') || line.startsWith('*') || line.startsWith('-')) && currentJob) {
+        } else if (currentJob && (line.startsWith('•') || line.startsWith('*') || line.startsWith('-') || (line.length > 5 && !dateMatch))) {
           const bullet = line.replace(/^[•*\-\s]+/, '')
           if (currentJob.description) {
             currentJob.description += ' ' + bullet
@@ -563,9 +606,10 @@ const handleResumeParsingRequest = async (req, res) => {
         resumeText = await safeOcrImage(req.file.buffer)
       } else if (mime === 'application/pdf') {
         try {
-          const parser = new PDFParse(req.file.buffer)
-          const data = await parser.extractText()
-          resumeText = data.text || ''
+          const parser = new PDFParse({ data: req.file.buffer })
+          const data = await parser.getText()
+          resumeText = data?.text || ''
+          console.log('[resume-parser] PDF text successfully extracted:', resumeText.length, 'characters')
         } catch (pdfErr) {
           console.warn('[resume-parser] PDF extraction warning:', pdfErr.message)
         }
@@ -653,37 +697,15 @@ const handleResumeParsingRequest = async (req, res) => {
 
     if (!content) {
       return res.status(200).json(fallbackParseResumeText(resumeText, fileName))
-    }
-
-    let parsed = {}
-    try {
-      parsed = JSON.parse(content)
-    } catch {
-      return res.status(200).json(fallbackParseResumeText(resumeText, fileName))
-    }
-
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return res.status(200).json(fallbackParseResumeText(resumeText, fileName))
-    }
-
-    const skills = Array.isArray(parsed.skills) ? parsed.skills.filter((item) => typeof item === 'string').slice(0, 50) : []
-    const education = Array.isArray(parsed.education) ? parsed.education.filter((item) => item && typeof item === 'object').slice(0, 20) : []
-    const experience = Array.isArray(parsed.experience) ? parsed.experience.filter((item) => item && typeof item === 'object').slice(0, 20) : []
-    const certifications = Array.isArray(parsed.certifications) ? parsed.certifications.filter((item) => typeof item === 'string').slice(0, 50) : []
-
-    const finalSkills = skills.length > 0 ? skills : fallbackParseResumeText(resumeText, fileName).skills
-
-    const sanitized = {
-      skills: finalSkills,
-      education,
-      experience,
-      certifications,
-    }
+    const aiSkills = Array.isArray(parsed?.skills) ? parsed.skills.filter((item) => typeof item === 'string').slice(0, 50) : []
+    const fallbackRes = fallbackParseResumeText(resumeText, fileName)
+    const combinedSkillsSet = new Set([...aiSkills, ...fallbackRes.skills])
+    const finalSkillsList = Array.from(combinedSkillsSet)
 
     return res.status(200).json({
       success: true,
-      data: sanitized,
-      ...sanitized,
+      data: { skills: finalSkillsList },
+      skills: finalSkillsList,
     })
   } catch (globalErr) {
     console.error('[resume-parser] Unhandled request error, returning fallback:', globalErr)

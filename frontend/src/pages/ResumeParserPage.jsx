@@ -272,14 +272,10 @@ export default function ResumeParserPage() {
           {/* Results */}
           {parsed && (() => {
             const data = parsed.data || parsed
-            const skills = Array.isArray(data.skills) ? data.skills : []
-            const education = Array.isArray(data.education) ? data.education : []
-            const experience = Array.isArray(data.experience) ? data.experience : []
-            const certifications = Array.isArray(data.certifications) ? data.certifications : []
+            const skills = Array.isArray(data.skills) ? data.skills : (Array.isArray(parsed.skills) ? parsed.skills : [])
 
             const saveSkillsAndNavigate = (targetPath) => {
               if (typeof window !== 'undefined') {
-                // 1. Merge Skills (Union of existing manual + new extracted skills)
                 let existingSkills = []
                 try {
                   const stored = JSON.parse(window.localStorage.getItem('userSkills') || '[]')
@@ -290,50 +286,6 @@ export default function ResumeParserPage() {
                 if (mergedSkills.length > 0) {
                   window.localStorage.setItem('userSkills', JSON.stringify(mergedSkills))
                 }
-
-                // 2. Merge Education
-                let existingEdu = []
-                try {
-                  const storedEdu = JSON.parse(window.localStorage.getItem('userEducation') || '[]')
-                  existingEdu = Array.isArray(storedEdu) ? storedEdu : []
-                } catch {}
-
-                const formattedEdu = education.map((e) => {
-                  const deg = e.degree || e.title || ''
-                  const sch = e.school || e.detail || ''
-                  const years = e.startYear && e.endYear ? ` (${e.startYear}-${e.endYear})` : ''
-                  return {
-                    title: deg || 'Education / Degree',
-                    detail: sch ? `at ${sch}${years}` : years
-                  }
-                })
-
-                const mergedEdu = [...existingEdu, ...formattedEdu]
-                if (mergedEdu.length > 0) {
-                  window.localStorage.setItem('userEducation', JSON.stringify(mergedEdu))
-                }
-
-                // 3. Merge Experience
-                let existingExp = []
-                try {
-                  const storedExp = JSON.parse(window.localStorage.getItem('userExperience') || '[]')
-                  existingExp = Array.isArray(storedExp) ? storedExp : []
-                } catch {}
-
-                const formattedExp = experience.map((e) => {
-                  const roleTitle = e.title || e.role || ''
-                  const companyName = e.company || e.detail || ''
-                  const desc = e.description && e.description !== roleTitle ? ` - ${e.description}` : ''
-                  return {
-                    title: roleTitle || 'Experience / Role',
-                    detail: companyName ? `at ${companyName}${desc}` : desc
-                  }
-                })
-
-                const mergedExp = [...existingExp, ...formattedExp]
-                if (mergedExp.length > 0) {
-                  window.localStorage.setItem('userExperience', JSON.stringify(mergedExp))
-                }
               }
               window.location.href = targetPath
             }
@@ -342,9 +294,9 @@ export default function ResumeParserPage() {
               <div className="grid gap-6">
                 <div className="rounded-3xl border border-emerald-500/40 bg-emerald-950/30 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
-                    <p className="font-bold text-white text-lg">✓ Resume Parsed Successfully!</p>
+                    <p className="font-bold text-white text-lg">✓ Resume Skills Parsed Successfully!</p>
                     <p className="mt-1 text-sm text-slate-300">
-                      {skills.length} skills detected. You can save these skills to your session profile and proceed to target role selection.
+                      {skills.length} skills detected. Save these skills to your profile and proceed to target role selection.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3 shrink-0">
@@ -358,55 +310,16 @@ export default function ResumeParserPage() {
                   </div>
                 </div>
 
-                <ResultSection title={`Skills (${skills.length})`}>
+                <ResultSection title={`Detected Technical & Soft Skills (${skills.length})`}>
                   {skills.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {skills.map((s) => (
-                        <span key={s} className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1.5 text-sm font-semibold text-mint">
+                        <span key={s} className="rounded-full border border-mint/30 bg-mint/10 px-3.5 py-2 text-sm font-bold text-mint shadow-sm">
                           {s}
                         </span>
                       ))}
                     </div>
-                  ) : <p className="text-sm text-slate-400">None detected</p>}
-                </ResultSection>
-
-                <ResultSection title="Education">
-                  {education.length > 0 ? (
-                    <div className="space-y-3">
-                      {education.map((e, i) => (
-                        <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-                          <p className="font-semibold text-white">{e.school || 'Education'}</p>
-                          <p>{e.degree || 'Degree / Course'}</p>
-                          <p className="text-xs text-slate-400 mt-1">{e.startYear ?? '?'} – {e.endYear ?? '?'}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : <p className="text-sm text-slate-400">None detected</p>}
-                </ResultSection>
-
-                <ResultSection title="Experience">
-                  {experience.length > 0 ? (
-                    <div className="space-y-3">
-                      {experience.map((e, i) => (
-                        <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-                          <p className="font-semibold text-white">{e.company || 'Organization'}</p>
-                          <p>{e.title || 'Role / Project'}</p>
-                          <p className="text-xs text-slate-400 mt-1">{e.startYear ?? '?'} – {e.endYear ?? '?'}</p>
-                          {e.description && <p className="mt-2 leading-relaxed">{e.description}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  ) : <p className="text-sm text-slate-400">None detected</p>}
-                </ResultSection>
-
-                <ResultSection title="Certifications">
-                  {certifications.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {certifications.map((c) => (
-                        <span key={c} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-200">{c}</span>
-                      ))}
-                    </div>
-                  ) : <p className="text-sm text-slate-400">None detected</p>}
+                  ) : <p className="text-sm text-slate-400">No skills detected in this document.</p>}
                 </ResultSection>
               </div>
             )

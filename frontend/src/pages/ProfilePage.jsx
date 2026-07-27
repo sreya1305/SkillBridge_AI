@@ -33,7 +33,11 @@ export default function ProfilePage() {
   const [experience, setExperience] = useState(() => {
     if (typeof window === 'undefined') return []
     try {
-      return JSON.parse(window.localStorage.getItem('userExperience') || '[]')
+      const stored = JSON.parse(window.localStorage.getItem('userExperience') || '[]')
+      return Array.isArray(stored) ? stored.filter(item => {
+        const str = `${item?.title || ''} ${item?.detail || ''}`.toLowerCase()
+        return !str.includes('nativewind') && !str.includes('expo sdk') && !str.includes('1 of 2')
+      }) : []
     } catch {
       return []
     }
