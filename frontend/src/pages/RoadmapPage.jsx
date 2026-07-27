@@ -4,6 +4,7 @@ import PageNav from '../components/PageNav'
 import { getSkillGapAnalysis } from '../lib/skillGap'
 import { getSelectedRole } from '../lib/roleStorage'
 import { generateRoadmap } from '../services/roadmapGenerator'
+import jsPDFModule from 'jspdf'
 
 const MASTER_SKILL_GUIDES = {
   'programming fundamentals': {
@@ -261,6 +262,237 @@ export default function RoadmapPage() {
     setCompletedItems({})
   }
 
+  const handleExportPDF = () => {
+    if (!roadmap) return
+
+    const jsPDF = jsPDFModule.jsPDF || jsPDFModule
+    const doc = new jsPDF({
+      orientation: 'p',
+      unit: 'pt',
+      format: 'a4'
+    })
+
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 40
+    const contentWidth = pageWidth - margin * 2
+    let y = 40
+
+    const checkPageBreak = (neededHeight) => {
+      if (y + neededHeight > pageHeight - margin) {
+        doc.addPage()
+        y = 40
+      }
+    }
+
+    // Top Header Banner
+    doc.setFillColor(30, 27, 75) // Dark Indigo
+    doc.roundedRect(margin, y, contentWidth, 54, 8, 8, 'F')
+
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(15)
+    doc.text('SkillBridge AI Career Roadmap', margin + 16, y + 24)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9.5)
+    doc.setTextColor(199, 210, 254)
+    doc.text(`Target Role: ${roleTitle}   |   Est. Duration: ${totalDuration}   |   Progress: ${metrics.percent}%`, margin + 16, y + 42)
+
+    y += 68
+
+    // Strategy Summary Box
+    if (summaryText) {
+      const splitSummary = doc.splitTextToSize(`Strategy: ${summaryText}`, contentWidth - 24)
+      const summaryHeight = splitSummary.length * 13 + 18
+
+      checkPageBreak(summaryHeight)
+
+      doc.setFillColor(248, 250, 252)
+      doc.setDrawColor(99, 102, 241)
+      doc.setLineWidth(1.5)
+      doc.roundedRect(margin, y, contentWidth, summaryHeight, 6, 6, 'DF')
+
+      doc.setTextColor(55, 48, 163)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9.5)
+      doc.text(splitSummary, margin + 12, y + 16)
+
+      y += summaryHeight + 16
+    }
+
+    // Milestones loop
+    roadmap.milestones?.forEach((milestone, mIdx) => {
+      checkPageBreak(50)
+
+      doc.setFillColor(15, 23, 42)
+      doc.roundedRect(margin, y, contentWidth, 26, 4, 4, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.text(`Phase ${mIdx + 1}: ${milestone.title}`, margin + 12, y + 17)
+
+      y += 34
+
+      if (milestone.goal) {
+        const splitGoal = doc.splitTextToSize(`Goal: ${milestone.goal}`, contentWidth)
+        checkPageBreak(splitGoal.length * 12)
+        doc.setTextColor(15, 23, 42)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9.5)
+        doc.text(splitGoal, margin, y)
+        y += splitGoal.length * 13 + 4
+      }
+
+      if (milestone.whyItMatters) {
+        const splitWhy = doc.splitTextToSize(`Why it matters: ${milestone.whyItMatters}`, contentWidth)
+        checkPageBreak(splitWhy.length * 12)
+        doc.setTextColor(100, 116, 139)
+        doc.setFont('helvetica', 'italic')
+        doc.setFontSize(9)
+        doc.text(splitWhy, margin, y)
+        y += splitWhy.length * 12 + 8
+      }
+
+      // Learning Steps
+      const steps = milestone.learningSteps || []
+      if (steps.length > 0) {
+        checkPageBreak(20)
+        doc.setTextColor(67, 56, 202)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9.5)
+        doc.text('LEARNING STEPS & RESOURCES', margin, y)
+        y += 14
+
+        steps.forEach((step, stIdx) => {
+          const stepId = `m${mIdx}_step_${stIdx}`
+          const isDone = !!completedItems[stepId]
+
+          const statusPrefix = isDone ? '[Completed] ' : '[ ] '
+          const stepText = `${statusPrefix}${step.topic} ${step.estimatedStudyTime ? `(${step.estimatedStudyTime})` : ''}`
+          const splitStep = doc.splitTextToSize(stepText, contentWidth - 24)
+
+          const extraLines = (step.whyLearnThis ? 1 : 0) + (step.resource?.title ? 1 : 0) + (step.practicalTask ? 1.5 : 0)
+          const stepBoxHeight = splitStep.length * 13 + extraLines * 13 + 12
+
+          checkPageBreak(stepBoxHeight)
+
+          doc.setFillColor(241, 245, 249)
+          doc.setDrawColor(isDone ? 16 : 203, isDone ? 185 : 213, isDone ? 129 : 225)
+          doc.setLineWidth(1)
+          doc.roundedRect(margin, y, contentWidth, stepBoxHeight, 4, 4, 'DF')
+
+          doc.setTextColor(15, 23, 42)
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(9.5)
+          let innerY = y + 15
+          doc.text(splitStep, margin + 12, innerY)
+          innerY += splitStep.length * 13
+
+          if (step.whyLearnThis) {
+            doc.setTextColor(71, 85, 105)
+            doc.setFont('helvetica', 'normal')
+            doc.setFontSize(8.5)
+            doc.text(doc.splitTextToSize(step.whyLearnThis, contentWidth - 24), margin + 12, innerY)
+            innerY += 13
+          }
+
+          if (step.resource?.title) {
+            doc.setTextColor(67, 56, 202)
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(8.5)
+            doc.text(`Resource: ${step.resource.title} (${step.resource.url || ''})`, margin + 12, innerY)
+            innerY += 13
+          }
+
+          if (step.practicalTask) {
+            doc.setTextColor(22, 101, 52)
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(8.5)
+            doc.text(`Practical Task: ${step.practicalTask}`, margin + 12, innerY)
+          }
+
+          y += stepBoxHeight + 8
+        })
+      }
+
+      // Skill Breakdown
+      const resolvedBreakdown = resolveSkillBreakdown(milestone)
+      if (resolvedBreakdown.length > 0) {
+        checkPageBreak(20)
+        doc.setTextColor(67, 56, 202)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9.5)
+        doc.text('SKILL MASTERY GUIDES', margin, y)
+        y += 14
+
+        resolvedBreakdown.forEach((sb) => {
+          checkPageBreak(26)
+          doc.setTextColor(15, 23, 42)
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(9)
+          doc.text(`Skill: ${sb.skill}`, margin + 6, y)
+          y += 13
+
+          if (sb.howToDevelop?.length > 0) {
+            sb.howToDevelop.forEach((st) => {
+              const splitSt = doc.splitTextToSize(`• ${st}`, contentWidth - 24)
+              checkPageBreak(splitSt.length * 11)
+              doc.setTextColor(51, 65, 85)
+              doc.setFont('helvetica', 'normal')
+              doc.setFontSize(8.5)
+              doc.text(splitSt, margin + 14, y)
+              y += splitSt.length * 11 + 2
+            })
+          }
+
+          if (sb.actionableTask) {
+            const splitTask = doc.splitTextToSize(`Actionable Task: ${sb.actionableTask}`, contentWidth - 24)
+            checkPageBreak(splitTask.length * 11)
+            doc.setTextColor(22, 101, 52)
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(8.5)
+            doc.text(splitTask, margin + 14, y)
+            y += splitTask.length * 11 + 4
+          }
+
+          y += 4
+        })
+      }
+
+      // Capstone Project
+      if (milestone.project?.title) {
+        const splitProjDesc = doc.splitTextToSize(milestone.project.description || '', contentWidth - 24)
+        const projHeight = 22 + splitProjDesc.length * 12 + 6
+
+        checkPageBreak(projHeight)
+
+        doc.setFillColor(250, 245, 255)
+        doc.setDrawColor(216, 180, 254)
+        doc.setLineWidth(1)
+        doc.roundedRect(margin, y, contentWidth, projHeight, 6, 6, 'DF')
+
+        doc.setTextColor(126, 34, 206)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9.5)
+        doc.text(`Capstone Project: ${milestone.project.title}`, margin + 12, y + 15)
+
+        doc.setTextColor(76, 29, 149)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8.5)
+        doc.text(splitProjDesc, margin + 12, y + 27)
+
+        y += projHeight + 10
+      }
+
+      y += 10
+    })
+
+    // DIRECT AUTOMATIC PDF FILE DOWNLOAD
+    const cleanName = roleTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+    doc.save(`SkillBridge_Roadmap_${cleanName || 'career'}.pdf`)
+  }
+
   const handleGenerate = async () => {
     setLoading(true)
     setError('')
@@ -408,6 +640,14 @@ export default function RoadmapPage() {
                       </span>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Overall Completion</p>
                     </div>
+                    <button
+                      onClick={handleExportPDF}
+                      className="rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-mint/50 text-white hover:text-mint font-extrabold px-5 py-2.5 text-xs uppercase tracking-wider shadow-lg hover:shadow-mint/20 active:scale-[0.98] transition-all flex items-center gap-2 shrink-0"
+                      title="Download your full roadmap directly as a PDF document"
+                    >
+                      <span className="text-sm">📥</span>
+                      <span>Download Roadmap (PDF)</span>
+                    </button>
                     {metrics.completed > 0 && (
                       <button
                         onClick={handleResetProgress}
@@ -810,6 +1050,22 @@ export default function RoadmapPage() {
                 ) : (
                   <p className="text-sm text-slate-400">No milestones generated.</p>
                 )}
+              </section>
+
+              {/* Dedicated Download Roadmap PDF Card */}
+              <section className="rounded-3xl border border-mint/30 bg-gradient-to-r from-[#0e1a34] via-[#122448] to-[#0e1a34] p-8 shadow-2xl text-center flex flex-col items-center justify-center space-y-4">
+                <div className="text-4xl">📄</div>
+                <h3 className="text-2xl font-black text-white tracking-tight">Ready to take your career roadmap offline?</h3>
+                <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
+                  Download a high-resolution, beautifully formatted PDF document of your complete step-by-step career strategy, learning steps, resources, and capstone projects.
+                </p>
+                <button
+                  onClick={handleExportPDF}
+                  className="mt-2 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-mint/50 text-white hover:text-mint font-black px-8 py-4 text-base uppercase tracking-wider shadow-xl hover:shadow-mint/25 active:scale-[0.98] transition-all flex items-center gap-3"
+                >
+                  <span className="text-xl">📥</span>
+                  <span>DOWNLOAD ROADMAP (PDF)</span>
+                </button>
               </section>
             </div>
           )}
