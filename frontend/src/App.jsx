@@ -45,6 +45,18 @@ function HeroFlow() {
 }
 
 export default function App() {
+  if (typeof window !== 'undefined') {
+    try {
+      const nav = performance.getEntriesByType('navigation')
+      if (nav.length > 0 && nav[0].type === 'reload') {
+        window.localStorage.clear()
+        window.sessionStorage.clear()
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   const rawPath = typeof window !== 'undefined' ? window.location.pathname : '/'
   const path = rawPath.replace(/\/+$/, '') || '/'
 
