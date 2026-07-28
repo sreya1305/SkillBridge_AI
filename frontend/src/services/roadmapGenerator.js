@@ -259,9 +259,13 @@ function createLocalFallbackRoadmap({ targetRole, currentSkills = [], missingSki
 
 export async function generateRoadmap({ targetRole, currentSkills, missingSkills, matchedSkills }) {
   try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 6000)
+
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         targetRole,
         currentSkills,
@@ -269,6 +273,7 @@ export async function generateRoadmap({ targetRole, currentSkills, missingSkills
         matchedSkills,
       }),
     })
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       return createLocalFallbackRoadmap({ targetRole, currentSkills, missingSkills })
@@ -281,7 +286,7 @@ export async function generateRoadmap({ targetRole, currentSkills, missingSkills
 
     return data
   } catch (err) {
-    console.warn('Backend unavailable, using client fallback roadmap.', err)
+    console.warn('Backend API request timed out or failed, using client fallback roadmap.', err)
     return createLocalFallbackRoadmap({ targetRole, currentSkills, missingSkills })
   }
 }

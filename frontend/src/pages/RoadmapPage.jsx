@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import PageNav from '../components/PageNav'
 import { getSkillGapAnalysis } from '../lib/skillGap'
-import { getSelectedRole } from '../lib/roleStorage'
+import { getSelectedRole, getAllRoles } from '../lib/roleStorage'
 import { generateRoadmap } from '../services/roadmapGenerator'
 import jsPDFModule from 'jspdf'
 
@@ -209,7 +209,7 @@ function resolveSkillBreakdown(milestone) {
 export default function RoadmapPage() {
   const targetRoleId = typeof window !== 'undefined' ? window.localStorage.getItem('targetRoleId') : null
   const rawSkills = typeof window !== 'undefined' ? JSON.parse(window.localStorage.getItem('userSkills') || '[]') : []
-  const selectedRole = typeof window !== 'undefined' ? getSelectedRole() : null
+  const selectedRole = typeof window !== 'undefined' ? getSelectedRole(getAllRoles()[0]) : (getAllRoles()[0] || null)
   const skillGap = typeof window !== 'undefined' ? getSkillGapAnalysis(rawSkills, selectedRole?.skills) : { matched: { critical: [], important: [], niceToHave: [] }, missing: { critical: [], important: [], niceToHave: [] }, matchedSkills: [], totalRequiredSkills: 0, matchedSkillCount: 0, matchPercentage: 0 }
 
   const roleKey = selectedRole?.id || targetRoleId || 'default'
@@ -221,18 +221,9 @@ export default function RoadmapPage() {
   const [error, setError] = useState('')
   const [completedItems, setCompletedItems] = useState({})
 
-  // Load saved roadmap & progress from localStorage on mount
+  // Load saved progress from localStorage on mount (roadmap generates only on click)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedRoadmapRaw = window.localStorage.getItem(roadmapStorageKey)
-      if (savedRoadmapRaw) {
-        try {
-          setRoadmap(JSON.parse(savedRoadmapRaw))
-        } catch {
-          // ignore parsing error
-        }
-      }
-
       const savedProgressRaw = window.localStorage.getItem(progressStorageKey)
       if (savedProgressRaw) {
         try {
@@ -242,7 +233,7 @@ export default function RoadmapPage() {
         }
       }
     }
-  }, [roadmapStorageKey, progressStorageKey])
+  }, [progressStorageKey])
 
   // Save progress changes to localStorage
   const toggleItem = (itemId) => {
@@ -609,7 +600,14 @@ export default function RoadmapPage() {
             </div>
           </div>
 
-          {error && <div className="rounded-3xl border border-red-500/30 bg-red-950/40 p-6 text-sm text-red-300">{error}</div>}
+          {!roadmap && !loading && (
+            <div className="rounded-3xl border border-white/10 bg-[#0e1a34]/80 p-10 sm:p-12 text-center shadow-xl space-y-4 backdrop-blur-xl">
+              <h3 className="text-2xl font-bold text-white">Ready to Build Your AI Career Roadmap</h3>
+              <p className="mx-auto max-w-xl text-base text-slate-300">
+                Click <span className="font-bold text-mint">"Generate Roadmap"</span> in the top header card to create a custom step-by-step learning path tailored to <span className="font-bold text-white">{selectedRole?.title || 'your target role'}</span> and your missing skills.
+              </p>
+            </div>
+          )}
 
           {roadmap && (
             <div className="space-y-6">
