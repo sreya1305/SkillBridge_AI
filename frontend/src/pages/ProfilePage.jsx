@@ -31,6 +31,22 @@ export default function ProfilePage() {
   const [isParsingResume, setIsParsingResume] = useState(false)
   const [notice, setNotice] = useState('')
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const nav = performance.getEntriesByType('navigation')
+        if (nav.length > 0 && nav[0].type === 'reload') {
+          window.localStorage.removeItem('userSkills')
+          window.localStorage.removeItem('targetRoleId')
+          setSkills([])
+          setSelectedRoleId('')
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
+
   const addSkill = (skillName = skill, skillLevel = level) => {
     const name = skillName.trim()
     if (!name || skills.some((item) => item.name.toLowerCase() === name.toLowerCase())) return
