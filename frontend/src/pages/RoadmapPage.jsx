@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import PageNav from '../components/PageNav'
 import { getSkillGapAnalysis } from '../lib/skillGap'
@@ -220,6 +220,7 @@ export default function RoadmapPage() {
   const [roadmap, setRoadmap] = useState(null)
   const [error, setError] = useState('')
   const [completedItems, setCompletedItems] = useState({})
+  const [activeViewTab, setActiveViewTab] = useState('flowchart') // 'flowchart' | 'timeline' | 'checklist'
 
   // Load saved progress from localStorage on mount (roadmap generates only on click)
   useEffect(() => {
@@ -729,9 +730,148 @@ export default function RoadmapPage() {
                 </div>
               </section>
 
-              {/* Milestones */}
-              <section className="space-y-6">
-                {roadmap.milestones?.length > 0 ? (
+              {/* View Selector Tabs */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2 rounded-2xl bg-[#0e1a34] p-1.5 border border-white/10 shadow-inner">
+                  <button
+                    onClick={() => setActiveViewTab('flowchart')}
+                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all flex items-center gap-2 ${
+                      activeViewTab === 'flowchart'
+                        ? 'bg-violet text-white shadow-glow'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span>🧭</span> Flowchart Map
+                  </button>
+                  <button
+                    onClick={() => setActiveViewTab('checklist')}
+                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all flex items-center gap-2 ${
+                      activeViewTab === 'checklist'
+                        ? 'bg-violet text-white shadow-glow'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span>📋</span> Detailed Checklist
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 font-semibold">
+                  {activeViewTab === 'flowchart' ? 'Showing visual workflow map' : 'Showing step-by-step masterclass checklist'}
+                </p>
+              </div>
+
+              {/* Flowchart Map View */}
+              {activeViewTab === 'flowchart' && (
+                <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-[#0e1a34] via-[#0b1428] to-[#080f1e] p-6 sm:p-8 text-white shadow-xl space-y-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                    <div>
+                      <span className="rounded-full bg-violet/20 px-3 py-1 text-xs font-bold text-mint border border-mint/20">
+                        🧭 Visual Flowchart Map
+                      </span>
+                      <h3 className="text-xl font-extrabold text-white mt-2">Career Transition Flowchart</h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Node-based visual workflow connecting your learning phases, milestones, and capstone goals.
+                      </p>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-400 bg-white/5 border border-white/10 px-3.5 py-2 rounded-xl">
+                      Click any phase node to switch view
+                    </div>
+                  </div>
+
+                  {/* Flowchart Visual Graph Container */}
+                  <div className="relative py-4">
+                    <div className="flex flex-col lg:flex-row items-stretch justify-between gap-6 lg:gap-4 relative z-10">
+                      {/* Start Node */}
+                      <div className="flex-1 rounded-2xl border border-mint/40 bg-mint/10 p-5 backdrop-blur-md flex flex-col justify-between shadow-lg relative group hover:border-mint transition-all min-h-[160px]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-mint">Start Node</span>
+                          <span className="text-xs font-bold bg-mint/20 px-2 py-0.5 rounded text-mint">STEP 0</span>
+                        </div>
+                        <div className="my-3">
+                          <h4 className="font-extrabold text-white text-base">Current Skill Profile</h4>
+                          <p className="text-xs text-slate-300 mt-1 leading-relaxed">Foundational skill gap calculated for {selectedRole?.title || 'Target Role'}</p>
+                        </div>
+                        <div className="text-[11px] font-bold text-mint bg-mint/20 rounded-lg px-2.5 py-1 text-center border border-mint/30">
+                          READY FOR PHASE 1
+                        </div>
+                      </div>
+
+                      {/* Connected Flowchart Phase Nodes */}
+                      {roadmap.milestones?.map((m, mIdx) => {
+                        const stats = metrics.phaseStats[mIdx] || { isFinished: false, completed: 0, total: 0 }
+                        const resolvedBreakdown = resolveSkillBreakdown(m)
+
+                        return (
+                          <React.Fragment key={mIdx}>
+                            {/* Arrow Connector for Desktop/Mobile */}
+                            <div className="flex items-center justify-center text-mint/60 font-bold text-lg shrink-0 lg:px-1">
+                              <span className="hidden lg:inline text-xl text-mint animate-pulse">➔</span>
+                              <span className="lg:hidden text-xl text-mint animate-pulse">⬇</span>
+                            </div>
+
+                            {/* Milestone Node */}
+                            <div
+                              onClick={() => setActiveViewTab('checklist')}
+                              className={`flex-1 rounded-2xl border p-5 backdrop-blur-md flex flex-col justify-between shadow-xl cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[160px] ${
+                                stats.isFinished
+                                  ? 'border-emerald-500/50 bg-emerald-950/30 hover:border-emerald-400'
+                                  : mIdx === 0 || metrics.phaseStats[mIdx - 1]?.isFinished
+                                  ? 'border-violet/50 bg-violet/10 hover:border-mint'
+                                  : 'border-white/10 bg-white/5 opacity-80 hover:border-white/30'
+                              }`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2 mb-3">
+                                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-mint">
+                                    Phase {mIdx + 1}
+                                  </span>
+                                  <span
+                                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                                      stats.isFinished
+                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                        : stats.completed > 0
+                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                        : 'bg-white/10 text-slate-300 border-white/20'
+                                    }`}
+                                  >
+                                    {stats.isFinished ? '✅ Complete' : `${stats.completed}/${stats.total} Steps`}
+                                  </span>
+                                </div>
+
+                                <h4 className="font-extrabold text-white text-sm line-clamp-1">{m.title}</h4>
+                                <p className="text-xs text-slate-300 mt-1 line-clamp-2 leading-relaxed">{m.goal}</p>
+
+                                {/* Skill Pills */}
+                                <div className="flex flex-wrap gap-1.5 mt-3">
+                                  {resolvedBreakdown.slice(0, 3).map((item, sbIdx) => (
+                                    <span key={sbIdx} className="text-[10px] font-semibold bg-white/10 text-slate-200 px-2 py-0.5 rounded-md border border-white/10">
+                                      {item.skill}
+                                    </span>
+                                  ))}
+                                  {resolvedBreakdown.length > 3 && (
+                                    <span className="text-[10px] font-bold text-mint bg-mint/10 px-1.5 py-0.5 rounded-md">
+                                      +{resolvedBreakdown.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-bold">
+                                <span>⏱ {m.estimatedDuration || '3-4 wks'}</span>
+                                <span className="text-mint font-extrabold group-hover:underline">Inspect Phase ➔</span>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Milestones Checklist View */}
+              {activeViewTab === 'checklist' && (
+                <section className="space-y-6">
+                  {roadmap.milestones?.length > 0 ? (
                   roadmap.milestones.map((milestone, mIdx) => {
                     const steps = milestone.learningSteps || []
                     const project = milestone.project
@@ -1049,6 +1189,7 @@ export default function RoadmapPage() {
                   <p className="text-sm text-slate-400">No milestones generated.</p>
                 )}
               </section>
+            )}
 
               {/* Dedicated Download Roadmap PDF Card */}
               <section className="rounded-3xl border border-mint/30 bg-gradient-to-r from-[#0e1a34] via-[#122448] to-[#0e1a34] p-8 shadow-2xl text-center flex flex-col items-center justify-center space-y-4">
