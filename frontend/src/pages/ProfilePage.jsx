@@ -87,9 +87,15 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setAllRoles(getAllRoles())
+      const rolesList = getAllRoles()
+      setAllRoles(rolesList)
       const storedRoleId = window.localStorage.getItem('targetRoleId') || ''
-      setSelectedRoleId(storedRoleId)
+      if (storedRoleId && !rolesList.some((r) => r.id === storedRoleId)) {
+        window.localStorage.removeItem('targetRoleId')
+        setSelectedRoleId('')
+      } else {
+        setSelectedRoleId(storedRoleId)
+      }
 
       if (window.location.hash === '#target-role') {
         const el = document.getElementById('target-role')

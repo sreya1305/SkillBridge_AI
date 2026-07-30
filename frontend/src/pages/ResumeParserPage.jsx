@@ -332,45 +332,20 @@ export default function ResumeParserPage() {
                   ) : <p className="text-sm text-slate-400">No technical skills detected.</p>}
                 </ResultSection>
 
-                {/* Collapsible Inspection & Evidence Log */}
-                {verifiedSkills.length > 0 && (
-                  <details className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl transition-all">
-                    <summary className="cursor-pointer font-bold text-slate-200 hover:text-white flex items-center justify-between">
-                      <span>🔍 View Extraction Evidence & Pipeline Log ({verifiedSkills.length} Verified Entries)</span>
-                      <span className="text-xs text-mint">Click to Expand ↓</span>
-                    </summary>
-
-                    <div className="mt-6 space-y-4 text-xs">
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {verifiedSkills.map((vItem, vIdx) => (
-                          <div key={vIdx} className="rounded-xl border border-white/10 bg-black/40 p-3 space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-extrabold text-mint text-sm">{vItem.name}</span>
-                              <span className="text-slate-400">Source Text: <code className="text-emerald-400 font-mono">{vItem.sourceText}</code></span>
-                            </div>
-                            {vItem.evidence && (
-                              <p className="text-slate-300 italic bg-white/5 p-2 rounded border border-white/5">
-                                "{vItem.evidence}"
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      {debugPipeline && debugPipeline.removedSkills && debugPipeline.removedSkills.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                          <p className="font-bold text-amber-400 mb-2">Unverified / Excluded Candidates ({debugPipeline.removedSkills.length}):</p>
-                          <div className="flex flex-wrap gap-2">
-                            {debugPipeline.removedSkills.map((rem, rIdx) => (
-                              <span key={rIdx} className="rounded bg-red-950/40 border border-red-500/30 px-2 py-1 text-red-300">
-                                ✕ {rem.candidate} ({rem.reason})
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                {/* Soft & Professional Skills Section if present */}
+                {finalSoft.length > 0 && (
+                  <ResultSection title={`🤝 Soft & Professional Skills (${finalSoft.length})`}>
+                    <div className="flex flex-wrap gap-2.5">
+                      {finalSoft.map((skillName, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center rounded-full border border-violet/40 bg-violet/10 px-4 py-2 text-sm font-bold text-violet-300 shadow-sm hover:border-violet/70 transition-all"
+                        >
+                          {skillName}
+                        </span>
+                      ))}
                     </div>
-                  </details>
+                  </ResultSection>
                 )}
               </div>
             )

@@ -36,20 +36,30 @@ export function getCustomRoles() {
 
   try {
     const storedRoles = JSON.parse(window.localStorage.getItem(CUSTOM_ROLES_KEY) || '[]')
-    return Array.isArray(storedRoles) ? storedRoles.map(normalizeRole) : []
+    if (!Array.isArray(storedRoles)) return []
+    const filtered = storedRoles.filter(r => r && r.title && !r.title.toLowerCase().includes('income tax officer'))
+    if (filtered.length !== storedRoles.length) {
+      window.localStorage.setItem(CUSTOM_ROLES_KEY, JSON.stringify(filtered))
+    }
+    return filtered.map(normalizeRole)
   } catch {
     return []
   }
 }
 
 export function getAllRoles() {
-  return [...roles.roles, ...getCustomRoles()]
+  const combined = [...roles.roles, ...getCustomRoles()]
+  return combined.filter(r => r && r.title && !r.title.toLowerCase().includes('income tax officer'))
 }
 
 export function getSelectedRole(fallbackRole = null) {
   const targetRoleId = canUseStorage() ? window.localStorage.getItem(TARGET_ROLE_ID_KEY) : ''
   if (!targetRoleId) return fallbackRole
-  return getAllRoles().find((role) => role.id === targetRoleId) || fallbackRole
+  const found = getAllRoles().find((role) => role.id === targetRoleId)
+  if (!found && canUseStorage()) {
+    window.localStorage.removeItem(TARGET_ROLE_ID_KEY)
+  }
+  return found || fallbackRole
 }
 
 export function selectTargetRole(roleId) {
