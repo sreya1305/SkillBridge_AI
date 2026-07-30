@@ -11,11 +11,15 @@ function normalizeSkills(skills = {}) {
 
 export function getFallbackSkillsForRole(title = '') {
   const t = title.toLowerCase()
-  let critical = ['Core Fundamentals', 'Problem Solving', 'Git']
-  let important = ['Technical Documentation', 'Code Review', 'System Design']
-  let niceToHave = ['CI/CD', 'Cloud Deployment', 'Automated Testing']
+  let critical = ['Core Domain Knowledge', 'Professional Ethics', 'Analytical Reasoning', 'Problem Solving']
+  let important = ['Effective Communication', 'Task & Project Management', 'Reporting & Documentation']
+  let niceToHave = ['Digital Literacy & Excel', 'Risk Assessment', 'Professional Certification']
 
-  if (t.includes('ai') || t.includes('ml') || t.includes('machine learning') || t.includes('data')) {
+  if (t.includes('tax') || t.includes('income tax') || t.includes('audit') || t.includes('accountant') || t.includes('finance') || t.includes('bank') || t.includes('revenue')) {
+    critical = ['Taxation Laws & Regulations', 'Financial Auditing & Inspection', 'Accounting Principles', 'Tax Assessment & Filing', 'Legal Compliance']
+    important = ['Financial Analysis & Investigation', 'Case Documentation & Evidence', 'Communication & Client Interviewing', 'Ethics & Fraud Detection']
+    niceToHave = ['Advanced Excel & Financial Software', 'Risk Management', 'Public Administration']
+  } else if (t.includes('ai') || t.includes('ml') || t.includes('machine learning') || t.includes('data')) {
     critical = ['Python', 'SQL', 'Data Analysis', 'Machine Learning', 'Pandas', 'NumPy']
     important = ['Scikit-Learn', 'TensorFlow', 'PyTorch', 'Data Visualization', 'Statistics']
     niceToHave = ['Docker', 'AWS', 'Big Data', 'Feature Engineering']
@@ -27,6 +31,14 @@ export function getFallbackSkillsForRole(title = '') {
     critical = ['Figma', 'User Research', 'Wireframing', 'Prototyping', 'UI Design']
     important = ['Design Systems', 'Usability Testing', 'HTML/CSS', 'User Journey Mapping']
     niceToHave = ['Animation', 'Responsive Design', 'Accessibility (a11y)', 'Canva']
+  } else if (t.includes('manager') || t.includes('marketing') || t.includes('business') || t.includes('hr') || t.includes('sales') || t.includes('consultant')) {
+    critical = ['Strategic Planning', 'Project & Team Leadership', 'Market Research & Analysis', 'Stakeholder Management']
+    important = ['Financial Budgeting & Forecasting', 'Business Communication', 'Data-Driven Decision Making']
+    niceToHave = ['CRM Software', 'Public Relations & Marketing Strategy', 'Risk Management']
+  } else if (t.includes('health') || t.includes('doctor') || t.includes('nurse') || t.includes('medical')) {
+    critical = ['Clinical Knowledge', 'Patient Assessment', 'Medical Ethics & Safety', 'Diagnostics']
+    important = ['Medical Documentation', 'Pharmacology Basics', 'Emergency Protocols']
+    niceToHave = ['Healthcare Systems (EHR)', 'Patient Counseling']
   } else if (t.includes('web') || t.includes('frontend') || t.includes('backend') || t.includes('react') || t.includes('full stack') || t.includes('developer') || t.includes('engineer') || t.includes('programmer')) {
     critical = ['JavaScript', 'HTML5', 'CSS3', 'React / Vue', 'Node.js', 'Git']
     important = ['REST APIs', 'TypeScript', 'SQL / NoSQL Databases', 'System Architecture']
@@ -35,7 +47,7 @@ export function getFallbackSkillsForRole(title = '') {
 
   return {
     title: title.trim(),
-    description: `Target role requirements and baseline skill expectations for ${title.trim()}.`,
+    description: `Target role requirements and professional skill expectations for ${title.trim()}.`,
     skills: { critical, important, niceToHave }
   }
 }

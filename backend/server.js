@@ -226,16 +226,16 @@ function generateSkillBreakdown(skills = [], targetRole = '') {
     return {
       skill: skillName,
       howToDevelop: [
-        `Step 1: Study core concepts and official syntax for ${skillName}`,
-        `Step 2: Follow interactive tutorials and code-alongs on MDN / freeCodeCamp for ${skillName}`,
-        `Step 3: Build a practical mini-feature implementing ${skillName} to validate mastery`
+        `Step 1: Study core concepts, regulations, and frameworks for ${skillName}`,
+        `Step 2: Review official documentation, case studies, or reference materials for ${skillName}`,
+        `Step 3: Complete practical exercises and real-world scenarios applying ${skillName}`
       ],
       platformResources: [
-        { name: `MDN Web Docs - ${skillName} Guide`, url: 'https://developer.mozilla.org' },
-        { name: `freeCodeCamp - ${skillName} Tutorials`, url: 'https://freecodecamp.org' },
-        { name: `Exercism - Interactive ${skillName} Practice`, url: 'https://exercism.org' }
+        { name: `Coursera & edX - Professional ${skillName} Courses`, url: 'https://coursera.org' },
+        { name: `LinkedIn Learning - ${skillName} Masterclass`, url: 'https://linkedin.com/learning' },
+        { name: `Official Reference Guides & Domain Manuals`, url: 'https://google.com' }
       ],
-      actionableTask: `Build a standalone application or feature demonstrating core capabilities of ${skillName}.`
+      actionableTask: `Execute a practical case study or project scenario demonstrating core capabilities of ${skillName}.`
     }
   })
 }
@@ -868,11 +868,27 @@ app.post('/api/gap-analysis', (req, res) => {
   const career = String(req.body?.career || req.body?.targetRole || 'Software Developer')
   const userLower = new Set(userSkills.map((s) => String(s).toLowerCase()))
 
-  const defaultRequired = ['JavaScript', 'TypeScript', 'Node.js', 'SQL', 'Git', 'Docker']
+  const cLower = career.toLowerCase()
+  let requiredSkills = ['Core Domain Knowledge', 'Professional Ethics', 'Analytical Reasoning', 'Problem Solving', 'Task & Project Management', 'Reporting & Documentation']
+  
+  if (cLower.includes('tax') || cLower.includes('audit') || cLower.includes('accountant') || cLower.includes('finance') || cLower.includes('bank') || cLower.includes('revenue')) {
+    requiredSkills = ['Taxation Laws & Regulations', 'Financial Auditing & Inspection', 'Accounting Principles', 'Tax Assessment & Filing', 'Legal Compliance', 'Financial Analysis']
+  } else if (cLower.includes('data scientist') || cLower.includes('data science')) {
+    requiredSkills = ['Python', 'SQL', 'Machine Learning', 'Pandas', 'NumPy', 'Statistics']
+  } else if (cLower.includes('ui') || cLower.includes('ux') || cLower.includes('design')) {
+    requiredSkills = ['Figma', 'User Research', 'Wireframing', 'Prototyping', 'UI Design', 'Design Systems']
+  } else if (cLower.includes('cyber') || cLower.includes('security')) {
+    requiredSkills = ['Networking', 'Linux', 'Security Fundamentals', 'SIEM Tools', 'Penetration Testing', 'Incident Response']
+  } else if (cLower.includes('manager') || cLower.includes('marketing') || cLower.includes('business') || cLower.includes('hr')) {
+    requiredSkills = ['Strategic Planning', 'Project Leadership', 'Market Analysis', 'Financial Budgeting', 'Stakeholder Management', 'Data-Driven Decision Making']
+  } else if (cLower.includes('developer') || cLower.includes('engineer') || cLower.includes('software') || cLower.includes('coder')) {
+    requiredSkills = ['JavaScript', 'TypeScript', 'Node.js', 'SQL', 'Git', 'Docker']
+  }
+
   const existingSkills = []
   const missingSkills = []
 
-  defaultRequired.forEach((skill, idx) => {
+  requiredSkills.forEach((skill, idx) => {
     if (userLower.has(skill.toLowerCase())) {
       existingSkills.push(skill)
     } else {
