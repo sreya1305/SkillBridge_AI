@@ -222,6 +222,36 @@ export default function RoadmapPage() {
   const [completedItems, setCompletedItems] = useState({})
   const [activeViewTab, setActiveViewTab] = useState('flowchart') // 'flowchart' | 'timeline' | 'checklist'
 
+  const handleTabSwitch = (tab) => {
+    setActiveViewTab(tab)
+    setTimeout(() => {
+      const targetEl = document.getElementById('view-tabs-header') || document.getElementById('roadmap-content')
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }, 50)
+  }
+
+  const handleSelectPhase = (phaseIndex) => {
+    setActiveViewTab('checklist')
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const cardEl = document.getElementById(`phase-card-${phaseIndex}`)
+        if (cardEl) {
+          const navOffset = 90
+          const elementPosition = cardEl.getBoundingClientRect().top + window.pageYOffset
+          const offsetPosition = elementPosition - navOffset
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+          })
+        }
+      }, 100)
+    })
+  }
+
   // Load saved progress from localStorage on mount (roadmap generates only on click)
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -489,6 +519,10 @@ export default function RoadmapPage() {
     setLoading(true)
     setError('')
     setRoadmap(null)
+    setCompletedItems({})
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(progressStorageKey)
+    }
     try {
       const result = await generateRoadmap({
         targetRole: selectedRole?.title || 'Target Role',
@@ -731,36 +765,39 @@ export default function RoadmapPage() {
               </section>
 
               {/* View Selector Tabs */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-                <div className="flex items-center gap-2 rounded-2xl bg-[#0e1a34] p-1.5 border border-white/10 shadow-inner">
+              <div id="view-tabs-header" className="rounded-3xl border border-white/15 bg-gradient-to-r from-[#0e1a34] via-[#122244] to-[#0e1a34] p-4 sm:p-5 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3 rounded-2xl bg-[#081022]/90 p-2 border border-white/10 shadow-inner w-full md:w-auto">
                   <button
-                    onClick={() => setActiveViewTab('flowchart')}
-                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all flex items-center gap-2 ${
+                    onClick={() => handleTabSwitch('flowchart')}
+                    className={`flex-1 md:flex-none rounded-xl px-6 py-3.5 text-sm sm:text-base font-extrabold transition-all flex items-center justify-center gap-2.5 ${
                       activeViewTab === 'flowchart'
-                        ? 'bg-violet text-white shadow-glow'
+                        ? 'bg-gradient-to-r from-violet to-indigo-600 text-white shadow-lg shadow-violet/30 scale-[1.02]'
                         : 'text-slate-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <span>🧭</span> Flowchart Map
+                    <span className="text-lg">🧭</span> <span>Flowchart Map</span>
                   </button>
                   <button
-                    onClick={() => setActiveViewTab('checklist')}
-                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all flex items-center gap-2 ${
+                    onClick={() => handleTabSwitch('checklist')}
+                    className={`flex-1 md:flex-none rounded-xl px-6 py-3.5 text-sm sm:text-base font-extrabold transition-all flex items-center justify-center gap-2.5 ${
                       activeViewTab === 'checklist'
-                        ? 'bg-violet text-white shadow-glow'
+                        ? 'bg-gradient-to-r from-violet to-indigo-600 text-white shadow-lg shadow-violet/30 scale-[1.02]'
                         : 'text-slate-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <span>📋</span> Detailed Checklist
+                    <span className="text-lg">📋</span> <span>Detailed Checklist</span>
                   </button>
                 </div>
-                <p className="text-xs text-slate-400 font-semibold">
-                  {activeViewTab === 'flowchart' ? 'Showing visual workflow map' : 'Showing step-by-step masterclass checklist'}
-                </p>
+                <div className="text-xs sm:text-sm text-slate-300 font-bold bg-white/5 border border-white/10 px-4 py-2.5 rounded-2xl flex items-center gap-2 shrink-0">
+                  <span className="h-2.5 w-2.5 rounded-full bg-mint animate-pulse" />
+                  <span>
+                    {activeViewTab === 'flowchart' ? 'Showing visual workflow map' : 'Showing step-by-step masterclass checklist'}
+                  </span>
+                </div>
               </div>
 
               {/* Flowchart Map View */}
-              {activeViewTab === 'flowchart' && (
+              <div className={activeViewTab === 'flowchart' ? 'block' : 'hidden'}>
                 <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-[#0e1a34] via-[#0b1428] to-[#080f1e] p-6 sm:p-8 text-white shadow-xl space-y-8">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
                     <div>
@@ -781,16 +818,16 @@ export default function RoadmapPage() {
                   <div className="relative py-4">
                     <div className="flex flex-col lg:flex-row items-stretch justify-between gap-6 lg:gap-4 relative z-10">
                       {/* Start Node */}
-                      <div className="flex-1 rounded-2xl border border-mint/40 bg-mint/10 p-5 backdrop-blur-md flex flex-col justify-between shadow-lg relative group hover:border-mint transition-all min-h-[160px]">
+                      <div className="flex-1 rounded-3xl border border-mint/40 bg-mint/10 p-6 sm:p-7 backdrop-blur-md flex flex-col justify-between shadow-xl relative group hover:border-mint transition-all min-h-[220px]">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-mint">Start Node</span>
-                          <span className="text-xs font-bold bg-mint/20 px-2 py-0.5 rounded text-mint">STEP 0</span>
+                          <span className="text-xs font-extrabold uppercase tracking-wider text-mint">Start Node</span>
+                          <span className="text-xs font-bold bg-mint/20 px-2.5 py-1 rounded-md text-mint">STEP 0</span>
                         </div>
-                        <div className="my-3">
-                          <h4 className="font-extrabold text-white text-base">Current Skill Profile</h4>
-                          <p className="text-xs text-slate-300 mt-1 leading-relaxed">Foundational skill gap calculated for {selectedRole?.title || 'Target Role'}</p>
+                        <div className="my-4">
+                          <h4 className="font-black text-white text-lg">Current Skill Profile</h4>
+                          <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">Foundational skill gap calculated for {selectedRole?.title || 'Target Role'}</p>
                         </div>
-                        <div className="text-[11px] font-bold text-mint bg-mint/20 rounded-lg px-2.5 py-1 text-center border border-mint/30">
+                        <div className="text-xs font-extrabold text-mint bg-mint/20 rounded-xl px-3 py-1.5 text-center border border-mint/30">
                           READY FOR PHASE 1
                         </div>
                       </div>
@@ -803,15 +840,15 @@ export default function RoadmapPage() {
                         return (
                           <React.Fragment key={mIdx}>
                             {/* Arrow Connector for Desktop/Mobile */}
-                            <div className="flex items-center justify-center text-mint/60 font-bold text-lg shrink-0 lg:px-1">
-                              <span className="hidden lg:inline text-xl text-mint animate-pulse">➔</span>
-                              <span className="lg:hidden text-xl text-mint animate-pulse">⬇</span>
+                            <div className="flex items-center justify-center text-mint/70 font-bold text-2xl shrink-0 lg:px-2">
+                              <span className="hidden lg:inline text-2xl text-mint animate-pulse">➔</span>
+                              <span className="lg:hidden text-2xl text-mint animate-pulse">⬇</span>
                             </div>
 
                             {/* Milestone Node */}
                             <div
-                              onClick={() => setActiveViewTab('checklist')}
-                              className={`flex-1 rounded-2xl border p-5 backdrop-blur-md flex flex-col justify-between shadow-xl cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[160px] ${
+                              onClick={() => handleSelectPhase(mIdx)}
+                              className={`flex-1 rounded-3xl border p-6 sm:p-7 backdrop-blur-md flex flex-col justify-between shadow-2xl cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[220px] ${
                                 stats.isFinished
                                   ? 'border-emerald-500/50 bg-emerald-950/30 hover:border-emerald-400'
                                   : mIdx === 0 || metrics.phaseStats[mIdx - 1]?.isFinished
@@ -820,12 +857,12 @@ export default function RoadmapPage() {
                               }`}
                             >
                               <div>
-                                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2 mb-3">
-                                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-mint">
+                                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5 mb-3.5">
+                                  <span className="text-xs font-extrabold uppercase tracking-wider text-mint">
                                     Phase {mIdx + 1}
                                   </span>
                                   <span
-                                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                                    className={`text-xs font-extrabold px-2.5 py-1 rounded-full border ${
                                       stats.isFinished
                                         ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                                         : stats.completed > 0
@@ -837,25 +874,25 @@ export default function RoadmapPage() {
                                   </span>
                                 </div>
 
-                                <h4 className="font-extrabold text-white text-sm line-clamp-1">{m.title}</h4>
-                                <p className="text-xs text-slate-300 mt-1 line-clamp-2 leading-relaxed">{m.goal}</p>
+                                <h4 className="font-black text-white text-base sm:text-lg line-clamp-1">{m.title}</h4>
+                                <p className="text-xs sm:text-sm text-slate-300 mt-1.5 line-clamp-2 leading-relaxed">{m.goal}</p>
 
                                 {/* Skill Pills */}
-                                <div className="flex flex-wrap gap-1.5 mt-3">
+                                <div className="flex flex-wrap gap-2 mt-4">
                                   {resolvedBreakdown.slice(0, 3).map((item, sbIdx) => (
-                                    <span key={sbIdx} className="text-[10px] font-semibold bg-white/10 text-slate-200 px-2 py-0.5 rounded-md border border-white/10">
+                                    <span key={sbIdx} className="text-xs font-semibold bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg border border-white/10">
                                       {item.skill}
                                     </span>
                                   ))}
                                   {resolvedBreakdown.length > 3 && (
-                                    <span className="text-[10px] font-bold text-mint bg-mint/10 px-1.5 py-0.5 rounded-md">
+                                    <span className="text-xs font-bold text-mint bg-mint/10 px-2 py-1 rounded-lg border border-mint/20">
                                       +{resolvedBreakdown.length - 3} more
                                     </span>
                                   )}
                                 </div>
                               </div>
 
-                              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-bold">
+                              <div className="mt-5 pt-3.5 border-t border-white/10 flex items-center justify-between text-xs text-slate-300 font-bold">
                                 <span>⏱ {m.estimatedDuration || '3-4 wks'}</span>
                                 <span className="text-mint font-extrabold group-hover:underline">Inspect Phase ➔</span>
                               </div>
@@ -866,11 +903,10 @@ export default function RoadmapPage() {
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Milestones Checklist View */}
-              {activeViewTab === 'checklist' && (
-                <section className="space-y-6">
+              <section className={activeViewTab === 'checklist' ? 'block space-y-8' : 'hidden'}>
                   {roadmap.milestones?.length > 0 ? (
                   roadmap.milestones.map((milestone, mIdx) => {
                     const steps = milestone.learningSteps || []
@@ -882,18 +918,18 @@ export default function RoadmapPage() {
                     const isProjDone = !!completedItems[projId]
 
                     return (
-                      <div key={mIdx} className="rounded-3xl border border-white/10 bg-[#0e1a34] p-6 sm:p-8 shadow-xl space-y-6">
+                      <div id={`phase-card-${mIdx}`} key={mIdx} className="rounded-3xl border border-white/15 bg-[#0e1a34] p-8 sm:p-10 shadow-2xl space-y-8">
                         {/* Milestone Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-white/10 pb-5">
-                          <div className="space-y-1">
-                            <span className="inline-block rounded-full bg-violet/20 px-3 py-1 text-xs font-bold text-mint border border-mint/20">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-white/10 pb-6">
+                          <div className="space-y-2">
+                            <span className="inline-block rounded-full bg-violet/20 px-3.5 py-1.5 text-xs font-bold text-mint border border-mint/20">
                               Phase {mIdx + 1} • {milestone.estimatedDuration || (milestone.estimatedWeeks ? `${milestone.estimatedWeeks} weeks` : '4 weeks')}
                             </span>
-                            <h3 className="text-xl font-bold text-white pt-1">{milestone.title}</h3>
-                            {milestone.goal && <p className="text-sm font-medium text-slate-200">🎯 Goal: {milestone.goal}</p>}
+                            <h3 className="text-2xl sm:text-3xl font-black text-white pt-1">{milestone.title}</h3>
+                            {milestone.goal && <p className="text-base font-semibold text-slate-200">🎯 Goal: {milestone.goal}</p>}
                             {milestone.whyItMatters && (
-                              <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">
-                                💡 <span className="font-semibold text-slate-300">Why it matters:</span> {milestone.whyItMatters}
+                              <p className="text-sm text-slate-300 leading-relaxed max-w-4xl">
+                                💡 <span className="font-bold text-white">Why it matters:</span> {milestone.whyItMatters}
                               </p>
                             )}
                           </div>
@@ -1189,7 +1225,6 @@ export default function RoadmapPage() {
                   <p className="text-sm text-slate-400">No milestones generated.</p>
                 )}
               </section>
-            )}
 
               {/* Dedicated Download Roadmap PDF Card */}
               <section className="rounded-3xl border border-mint/30 bg-gradient-to-r from-[#0e1a34] via-[#122448] to-[#0e1a34] p-8 shadow-2xl text-center flex flex-col items-center justify-center space-y-4">
