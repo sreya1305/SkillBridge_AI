@@ -1,0 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base { html { scroll-behavior: smooth; } body { @apply m-0 min-w-[320px] bg-ink font-[Manrope] text-white antialiased; } }
+@layer components { .wrap { @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10; } .eyebrow { @apply font-[DM_Mono] text-[11px] font-medium uppercase tracking-[.18em] text-mint; } }

@@ -1,0 +1,116 @@
+{
+  "roles": [
+    {
+      "id": "data-scientist",
+      "title": "Data Scientist",
+      "description": "Analyze data, build models, and translate insights into business decisions.",
+      "skills": {
+        "critical": [
+          "Python",
+          "SQL",
+          "Statistics and probability",
+          "Machine learning",
+          "Data cleaning and analysis"
+        ],
+        "important": [
+          "Data visualisation",
+          "Pandas and NumPy",
+          "Experiment design and A/B testing",
+          "Model evaluation",
+          "Git"
+        ],
+        "niceToHave": [
+          "Cloud platforms",
+          "Deep learning",
+          "Apache Spark",
+          "MLOps",
+          "Business storytelling"
+        ]
+      }
+    },
+    {
+      "id": "software-developer",
+      "title": "Software Developer",
+      "description": "Build software solutions, write quality code, and collaborate across product teams.",
+      "skills": {
+        "critical": [
+          "Programming fundamentals",
+          "JavaScript or Python",
+          "Data structures and algorithms",
+          "Git",
+          "Debugging"
+        ],
+        "important": [
+          "React or another frontend framework",
+          "APIs and HTTP",
+          "Databases",
+          "Testing",
+          "Object-oriented programming"
+        ],
+        "niceToHave": [
+          "TypeScript",
+          "CI/CD",
+          "Docker",
+          "Cloud platforms",
+          "System design"
+        ]
+      }
+    },
+    {
+      "id": "ui-ux-designer",
+      "title": "UI/UX Designer",
+      "description": "Design user experiences with research, wireframes, and polished visual systems.",
+      "skills": {
+        "critical": [
+          "User research",
+          "Wireframing",
+          "Prototyping",
+          "Visual design fundamentals",
+          "Figma"
+        ],
+        "important": [
+          "Usability testing",
+          "Information architecture",
+          "Design systems",
+          "Interaction design",
+          "Accessibility"
+        ],
+        "niceToHave": [
+          "HTML and CSS",
+          "Motion design",
+          "Product analytics",
+          "Design handoff",
+          "Content design"
+        ]
+      }
+    },
+    {
+      "id": "cybersecurity-analyst",
+      "title": "Cybersecurity Analyst",
+      "description": "Protect systems with monitoring, incident response, and threat analysis.",
+      "skills": {
+        "critical": [
+          "Network security fundamentals",
+          "Security monitoring",
+          "Incident response",
+          "Threat analysis",
+          "Linux and Windows security"
+        ],
+        "important": [
+          "SIEM tools",
+          "Vulnerability management",
+          "Scripting with Python or Bash",
+          "Identity and access management",
+          "Security policies and compliance"
+        ],
+        "niceToHave": [
+          "Cloud security",
+          "Penetration testing",
+          "Digital forensics",
+          "Threat intelligence",
+          "Security certifications"
+        ]
+      }
+    }
+  ]
+}

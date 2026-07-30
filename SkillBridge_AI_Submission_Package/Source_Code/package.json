@@ -1,0 +1,13 @@
+{
+  "name": "skillbridge-ai",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "npm.cmd --prefix frontend run dev",
+    "build": "npm.cmd --prefix frontend run build",
+    "preview": "npm.cmd --prefix frontend run preview",
+    "start-server": "npm.cmd --prefix backend run start",
+    "test": "node ./test/skillGap.test.js",
+    "install:all": "npm.cmd install --prefix frontend && npm.cmd install --prefix backend"
+  }
+}
