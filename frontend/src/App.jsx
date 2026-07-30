@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import Button from './components/Button'
 import Navbar from './components/Navbar'
 import SectionTitle from './components/SectionTitle'
@@ -45,6 +46,22 @@ function HeroFlow() {
 }
 
 export default function App() {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const isSessionActive = window.sessionStorage.getItem('session_active')
+        const navEntries = performance.getEntriesByType('navigation')
+        const isReload = navEntries.length > 0 && navEntries[0].type === 'reload'
+
+        if (!isSessionActive || isReload) {
+          window.localStorage.clear()
+          window.sessionStorage.setItem('session_active', 'true')
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }, [])
 
   const rawPath = typeof window !== 'undefined' ? window.location.pathname : '/'
   const path = rawPath.replace(/\/+$/, '') || '/'
